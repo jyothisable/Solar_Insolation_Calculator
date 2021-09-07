@@ -5,7 +5,7 @@
 # =============================================================================
 """
 The module has been build for calculating the solar insolation of a region using DEM (digital elevation model)
-using grass gis r.sun module
+using grass gis
 """
 
 import os
@@ -47,13 +47,17 @@ def findSolarInsolation(day=30, time=12):
             lastLine = cache_csv.read().splitlines()[-1]
         fileName = os.path.basename(file).split('.')[0]
         with open('data/output/' + fileName + '_stats.csv', 'a') as output_csv:
+            if output_csv.stat("yourfile.extension").st_size == 0:
+                output_csv.writelines(
+                    'day,time,non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90')
             output_csv.write("\n")
-            output_csv.writelines(lastLine)
+            output_csv.writelines(day+time+lastLine)
 
         gs.run_command('r.out.gdal', input='global_rad',
                        output='data/output/'+fileName + '_D'+str(day)+'_H'+str(time)+'.tif', type='Float64', overwrite=True)
 
-# input the
 
-
-findSolarInsolation()
+# specify range of day [1-365 int] and time [24h float]
+for day in range(1, 2):
+    for time in range(11, .5, 12.5):
+        findSolarInsolation(day, time)
