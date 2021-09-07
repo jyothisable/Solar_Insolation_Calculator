@@ -15,7 +15,7 @@ import grass.script as gs
 os.chdir(os.path.dirname(__file__))
 
 
-def findSolarInsolation(path='data/input_DEMs/IIT_Bbs_DEM.tif', day=30, time=12):
+def findSolarInsolation(day=30, time=12):
     files = Path('data/input_DEMs').glob('*.tif')
     for file in files:
         gs.run_command('r.in.gdal', input=file,
