@@ -12,10 +12,17 @@ import os
 from pathlib import Path
 import csv
 import grass.script as gs
+from datetime import datetime as d
+
+# because the file is usually imported to grass gis
 os.chdir(os.path.dirname(__file__))
 
 
 def findSolarInsolation(day=30, time=12):
+    '''
+    inputs the day and time to find solar insolation for all the files present in input_DEMs and output
+    the insolation data to output folder. stats about this is also available in .csv file
+    '''
     files = Path('data/input_DEMs').glob('*.tif')
     for file in files:
         gs.run_command('r.in.gdal', input=file,
@@ -46,12 +53,7 @@ def findSolarInsolation(day=30, time=12):
         gs.run_command('r.out.gdal', input='global_rad',
                        output='data/output/'+fileName + '_D'+str(day)+'_H'+str(time)+'.tif', type='Float64', overwrite=True)
 
+# input the
+
 
 findSolarInsolation()
-# r.horizon elevation = desert step = 30 output = horangle - -overwrite
-# r.slope.aspect elevation = desert aspect = aspect.dem slope = slope.dem - -overwrite
-# r.sun elevation = desert horizon_basename = horangle horizon_step = 30 aspect = aspect.dem slope = slope.dem glob_rad = global_rad day = 30 time = 11 nprocs = 4 linke_value = 5 albedo_value = 0.4 - -overwrite
-# r.univar global_rad
-# d.mon wx0
-# d.rast.leg global_rad
-# r.out.gdal input = global_rad output = desert_output.tif - -overwrite
