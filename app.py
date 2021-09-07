@@ -27,9 +27,11 @@ def findSolarInsolation(path='data/input_DEMs/IIT_Bbs_DEM.tif', day=30, time=11)
                    albedo_value=0.4, overwrite=True)
     gs.run_command('r.univar', map='global_rad',
                    output='data/cache/stats_cache.csv', separator='comma', overwrite=True, flags='te')
+
     with open('data/cache/stats_cache.csv', newline='') as cache_csv:
-        lastLine = csv.DictReader(cache_csv)[-1]
+        lastLine = cache_csv.read().splitlines()[-1]
     with open('data/output/stats.csv', 'a') as output_csv:
+        output_csv.write("\n")
         output_csv.writelines(lastLine)
 
 
