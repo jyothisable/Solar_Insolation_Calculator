@@ -6,6 +6,7 @@
 """
 The module has been build for calculating the solar insolation of a region using DEM (digital elevation model)
 using grass gis
+clearing output data folder manually before running again
 """
 
 import os
@@ -13,7 +14,6 @@ from pathlib import Path
 import csv
 import grass.script as gs
 from datetime import datetime as d
-
 # because the file is usually imported to grass gis
 os.chdir(os.path.dirname(__file__))
 
@@ -31,7 +31,7 @@ def findSolarInsolation(day=30, time=12):
                        output='horangle')
         gs.run_command('r.slope.aspect', elevation='DEM',
                        aspect='aspect.dem', slope='slope.dem', overwrite=True)
-        # for this data set => need to change #todo find a module to calc this
+        # solar time only applicable for this data set => need to change #todo find a module to calc this
         solar_time = time - 1
         gs.run_command('r.sun', elevation='DEM', horizon_basename='horangle',
                        horizon_step=7.5, aspect='aspect.dem', slope='slope.dem',
@@ -47,11 +47,11 @@ def findSolarInsolation(day=30, time=12):
             lastLine = cache_csv.read().splitlines()[-1]
         fileName = os.path.basename(file).split('.')[0]
         with open('data/output/' + fileName + '_stats.csv', 'a') as output_csv:
-            if output_csv.stat("yourfile.extension").st_size == 0:
+            if os.stat('data/output/' + fileName + '_stats.csv').st_size == 0:
                 output_csv.writelines(
                     'day,time,non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90')
             output_csv.write("\n")
-            output_csv.writelines(day+time+lastLine)
+            output_csv.writelines(str(day)+','+str(time)+','+lastLine)
 
         gs.run_command('r.out.gdal', input='global_rad',
                        output='data/output/'+fileName + '_D'+str(day)+'_H'+str(time)+'.tif', type='Float64', overwrite=True)
@@ -59,5 +59,5 @@ def findSolarInsolation(day=30, time=12):
 
 # specify range of day [1-365 int] and time [24h float]
 for day in range(1, 2):
-    for time in range(11, .5, 12.5):
+    for time in [11, 11.5]:
         findSolarInsolation(day, time)
