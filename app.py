@@ -63,6 +63,6 @@ def findSolarInsolation(day=30, time=12):
 
 
 # specify range of day [1-365 int] and time [24h float]
-for day in [30]:
-    for time in [12]:
-        findSolarInsolation(day, time)
+for day in range(1, 32):
+    for time in range(22, 31):  # 11am to 3pm
+        findSolarInsolation(day, time/2)
