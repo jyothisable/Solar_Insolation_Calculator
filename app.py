@@ -6,7 +6,9 @@
 """
 The module has been build for calculating the solar insolation of a region using DEM (digital elevation model)
 using grass gis
-clearing output data folder manually before running again
+#Importnet 
+clear output data folder manually before running again
+use new mapset for new input dem because horizon doesn't overwrite
 """
 
 import os
@@ -21,7 +23,7 @@ os.chdir(os.path.dirname(__file__))
 def findSolarInsolation(day=30, time=12):
     '''
     inputs the day and time to find solar insolation for all the files present in input_DEMs and output
-    the insolation data to output folder. stats about this is also available in .csv file
+    upscaled version of the insolation data to output folder. stats about this is also available in .csv file
     '''
     files = Path('data/input_DEMs').glob('*.tif')
     for file in files:
@@ -38,8 +40,11 @@ def findSolarInsolation(day=30, time=12):
                        glob_rad='global_rad', day=day, time=solar_time, nprocs=6, linke_value=5,
                        albedo_value=0.4, overwrite=True)
 
+        res = 0.0376967592499995625  # specific to this case
+        gs.run_command('r.resamp.interp', input='global_rad',
+                       output='DEM_upscaled')
         # output results stats into CSV (can't append directly)
-        gs.run_command('r.univar', map='global_rad',
+        gs.run_command('r.univar', map='DEM_upscaled',
                        output='data/cache/stats_cache.csv', separator='comma', overwrite=True, flags='te')
 
         # copy and append to a permanent stats.csv file
@@ -53,11 +58,11 @@ def findSolarInsolation(day=30, time=12):
             output_csv.write("\n")
             output_csv.writelines(str(day)+','+str(time)+','+lastLine)
 
-        gs.run_command('r.out.gdal', input='global_rad',
+        gs.run_command('r.out.gdal', input='DEM_upscaled',
                        output='data/output/'+fileName + '_D'+str(day)+'_H'+str(time)+'.tif', type='Float64', overwrite=True)
 
 
 # specify range of day [1-365 int] and time [24h float]
-for day in range(1, 2):
-    for time in [11, 11.5]:
+for day in [30]:
+    for time in [12]:
         findSolarInsolation(day, time)
