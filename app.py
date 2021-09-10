@@ -6,7 +6,7 @@
 """
 The module has been build for calculating the solar insolation of a region using DEM (digital elevation model)
 using grass gis
-#Importnet 
+#Importnet
 clear output data folder manually before running again
 use new mapset for new input dem because horizon doesn't overwrite
 """
