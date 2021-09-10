@@ -2,3 +2,4 @@ data/input_DEMs/*
 data/output/*
 data/cache/
 __pycache__
+.vscode
