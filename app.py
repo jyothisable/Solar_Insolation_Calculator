@@ -16,7 +16,7 @@ from pathlib import Path
 import csv
 import grass.script as gs
 from datetime import datetime as d
-# because the file is usually imported to grass gis
+# change directory because the file is usually imported to grass gis
 os.chdir(os.path.dirname(__file__))
 
 
@@ -42,7 +42,7 @@ def findSolarInsolation(day=30, time=12):
 
         res = 0.0376967592499995625  # specific to this case
         gs.run_command('r.resamp.interp', input='global_rad',
-                       output='DEM_upscaled')
+                       output='DEM_upscaled', overwrite=True)
         # output results stats into CSV (can't append directly)
         gs.run_command('r.univar', map='DEM_upscaled',
                        output='data/cache/stats_cache.csv', separator='comma', overwrite=True, flags='te')

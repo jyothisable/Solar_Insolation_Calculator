@@ -1,1 +1,3 @@
-data/input_DEMs/desert_dem.tif
+data/input_DEMs/*.tif
+data/output/*
+data/cache/
