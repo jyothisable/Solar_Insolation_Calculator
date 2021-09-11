@@ -20,7 +20,7 @@ from datetime import datetime as d
 os.chdir(os.path.dirname(__file__))
 
 
-def findSolarInsolation(day=30, time=12):
+def findSolarInsolation(day, time):
     '''
     inputs the day and time to find solar insolation for all the files present in input_DEMs and output
     upscaled version of the insolation data to output folder. stats about this is also available in .csv file
@@ -46,20 +46,26 @@ def findSolarInsolation(day=30, time=12):
         # output results stats into CSV (can't append directly)
         gs.run_command('r.univar', map='DEM_upscaled',
                        output='data/cache/stats_cache.csv', separator='comma', overwrite=True, flags='te')
+        inputFile = os.path.basename(file).split('.')[0]
+        outputFile = 'DEM_upscaled'
+        saveOutput(inputFile,outputFile)
 
-        # copy and append to a permanent stats.csv file
-        with open('data/cache/stats_cache.csv', newline='') as cache_csv:
-            lastLine = cache_csv.read().splitlines()[-1]
-        fileName = os.path.basename(file).split('.')[0]
-        with open('data/output/' + fileName + '_stats.csv', 'a') as output_csv:
-            if os.stat('data/output/' + fileName + '_stats.csv').st_size == 0:
-                output_csv.writelines(
-                    'day,time,non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90')
-            output_csv.write("\n")
-            output_csv.writelines(str(day)+','+str(time)+','+lastLine)
+def saveOutput(inputFile,outputFile):
+    '''
+    input input file name and output file name
+    save current output file as .tif in output folder and also append statistics of this file to a .csv file 
+    '''
+    with open('data/cache/stats_cache.csv', newline='') as cache_csv:
+        lastLine = cache_csv.read().splitlines()[-1]
+    with open('data/output/' + inputFile + '_stats.csv', 'a') as output_csv:
+        if os.stat('data/output/' + inputFile + '_stats.csv').st_size == 0:
+            output_csv.writelines(
+                'day,time,non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90')
+        output_csv.write("\n")
+        output_csv.writelines(str(day)+','+str(time)+','+lastLine)
 
-        gs.run_command('r.out.gdal', input='DEM_upscaled',
-                       output='data/output/'+fileName + '_D'+str(day)+'_H'+str(time)+'.tif', type='Float64', overwrite=True)
+        gs.run_command('r.out.gdal', input=outputFile,
+                       output='data/output/'+inputFile + '_D'+str(day)+'_H'+str(time)+'.tif', type='Float64', overwrite=True)
 
 
 # specify range of day [1-365 int] and time [24h float]
