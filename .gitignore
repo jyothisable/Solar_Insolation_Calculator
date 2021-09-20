@@ -1,4 +1,5 @@
 data/input_DEMs/*
+data/input_clouds/*
 data/output/*
 data/cache/
 __pycache__
