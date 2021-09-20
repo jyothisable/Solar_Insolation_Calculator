@@ -26,10 +26,13 @@ def findSolarInsolation(day, time):
     '''
     file = 'data/input_DEMs/desert_dem.tif'
     gs.run_command('r.in.gdal', input=file,output='DEM', overwrite=True)
-    t = int(time*100)
-    time_UTC = '0'+str((t//100)-6) + str(abs(((t%100)//100)*60 -30)) 
+    t = int(time*100)-550
+    min = str(int(((t%100)/100)*60))
+    if min =='0': min = '00'
+    time_UTC = '0'+str(t//100) + min
+    # print(time_UTC)
     gs.run_command('r.in.gdal', input='data/input_clouds/3DIMG_'+day+'JAN2020_'+time_UTC+'_L2B_CMK_CMK.tif',output='cloud', overwrite=True, flags='o')
-    gs.run_command('r.mapcalc.simple', a='cloud',expression='min(A,1)',output='cloud_cf',overwrite=True)
+    gs.run_command('r.mapcalc.simple', a='cloud',expression='result = A/3',output='cloud_cf',overwrite=True)
     gs.run_command('r.horizon', elevation='DEM', step=7.5,output='horangle')
     gs.run_command('r.slope.aspect', elevation='DEM',
                     aspect='aspect.dem', slope='slope.dem', overwrite=True)
@@ -39,6 +42,7 @@ def findSolarInsolation(day, time):
                     horizon_step=7.5, aspect='aspect.dem', slope='slope.dem',
                     glob_rad='global_rad', day=day, time=solar_time, nprocs=6, linke_value=1,
                     albedo_value=0.3,coeff_bh='cloud_cf', overwrite=True)
+                    # albedo_value=0.3, overwrite=True)
 
     res = 0.03618888887999958  # specific to this case 0.0352666666399999
     gs.run_command('r.resamp.interp', input='global_rad',
@@ -75,9 +79,11 @@ for day in range(1, 32):
     else: day =str(day)
     for time in range(22, 31):  # 11am to 3pm
         t = time/2
-        if day ==5 and t == 1150: 
+        # print('this is day ',day,' and time ',t)
+        if day =='05' and t == 11.5: 
             continue 
-        elif day ==16 and (t== 1100 or t ==1400) : 
+        elif day =='16' and t== 11.0:
             continue 
-
+        elif day =='16' and t ==14.0: 
+            continue 
         findSolarInsolation(day, t)
