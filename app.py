@@ -26,13 +26,14 @@ def findSolarInsolation(day, time):
     '''
     file = 'data/input_DEMs/desert_dem.tif'
     gs.run_command('r.in.gdal', input=file,output='DEM', overwrite=True)
+    gs.run_command('g.region', raster ='DEM')
     # convert time format 
     t = int(time*100)-550
     min = str(int(((t%100)/100)*60))
     if min =='0': min = '00'
     time_UTC = '0'+str(t//100) + min
-    # gs.run_command('r.in.gdal', input='data/input_clouds/3DIMG_'+day+'JAN2020_'+time_UTC+'_L2B_CMK_CMK.tif',output='cloud', overwrite=True, flags='o')
-    # gs.run_command('r.mapcalc.simple', a='cloud',expression='result = A/3',output='cloud_cf',overwrite=True)
+    gs.run_command('r.in.gdal', input='data/input_clouds/3DIMG_'+day+'JAN2020_'+time_UTC+'_L2B_CMK_CMK.tif',output='cloud', overwrite=True, flags='o')
+    gs.run_command('r.mapcalc.simple', a='cloud',expression='result =(1- A*(A<=1)*0.5)',output='cloud_cf',overwrite=True)
     gs.run_command('r.horizon', elevation='DEM', step=7.5,output='horangle')
     gs.run_command('r.slope.aspect', elevation='DEM',
                     aspect='aspect.dem', slope='slope.dem', overwrite=True)
@@ -41,12 +42,12 @@ def findSolarInsolation(day, time):
     gs.run_command('r.sun', elevation='DEM', horizon_basename='horangle',
                     horizon_step=7.5, aspect='aspect.dem', slope='slope.dem',
                     glob_rad='global_rad', day=day, time=solar_time, nprocs=6, linke_value=1,
-                    # albedo_value=0.3,coeff_bh='cloud_cf', overwrite=True)
-                    albedo_value=0.3, overwrite=True)
+                    albedo_value=0.3,coeff_bh='cloud_cf', overwrite=True)
+                    # albedo_value=0.3, overwrite=True)
 
     res = 0.03618888887999958  # specific to this case 0.0352666666399999
     gs.run_command('r.resamp.interp', input='global_rad',
-                    output='global_rad_upscaled', overwrite=True)
+                    output='global_rad_upscaled', method = 'bicubic', overwrite=True)
     inputFileName = os.path.basename(file).split('.')[0]
     fileNameInGrass = 'global_rad_upscaled'
     saveOutput(inputFileName,fileNameInGrass,day,time)
@@ -65,8 +66,7 @@ def saveOutput(inputFileName,fileNameInGrass,day,time):
     with open('data/output/' + inputFileName + '_stats.csv', 'a') as output_csv:
         if os.stat('data/output/' + inputFileName + '_stats.csv').st_size == 0:
             output_csv.writelines(
-                """day,time,non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,
-                first_quart,median,third_quart,perc_90""")
+                "day,time(IST),non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
         output_csv.write("\n")
         output_csv.writelines(str(day)+','+str(time)+','+lastLine)
 
@@ -75,10 +75,10 @@ def saveOutput(inputFileName,fileNameInGrass,day,time):
 
 
 # specify range of day [1-365 int] and time [24h float]
-for day in range(1, 2):
+for day in range(1, 32):
     if day < 10:day ='0'+ str(day)
     else: day =str(day)
-    for time in range(22, 31):  # 11am to 3pm
+    for time in range(23, 32):  # 11:30am to 3:30pm IST => about 11 to 3pm solar time
         t = time/2
         # skip non existant time
         if day =='05' and t == 11.5: 
