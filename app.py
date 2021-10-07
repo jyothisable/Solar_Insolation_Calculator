@@ -31,55 +31,55 @@ def findSolarInsolation(day, time):
         min = '00'
     time_UTC = '0'+str(t//100) + min if t//100 < 10 else str(t//100) + min
     # input cloud data
-    gs.run_command('r.in.gdal', 
-                   input='data/input_clouds/3DIMG_'+day+'JAN2020_' +time_UTC+'_L2B_CMK_CMK.tif', 
+    gs.run_command('r.in.gdal',
+                   input='data/input_clouds/3DIMG_'+day+'JAN2020_' + time_UTC+'_L2B_CMK_CMK.tif',
                    output='cloud',
                    overwrite=True, flags='o')
     # cleaning cloud data
-    gs.run_command('r.mapcalc.simple', 
+    gs.run_command('r.mapcalc.simple',
                    a='cloud',
-                   expression='result =(1- A*(A<=1)*0.5)', 
-                   output='cloud_cf', 
+                   expression='result =(1- A*(A<=1)*0.5)',
+                   output='cloud_cf',
                    overwrite=True)
 
     # solar time only applicable for this data set => need to change #todo find a module to calc this
     solar_time = time - 0.75
     # assigning region => default boundary and location
-    gs.run_command('g.region', 
+    gs.run_command('g.region',
                    raster='DEM')
-    gs.run_command('r.horizon', 
-                   elevation='DEM', 
-                   step=7.5, 
-                   output='horangle')
-    gs.run_command('r.slope.aspect', 
+    gs.run_command('r.horizon',
                    elevation='DEM',
-                   aspect='aspect.dem', 
-                   slope='slope.dem', 
-                   overwrite=True)
-    gs.run_command('r.sun', 
-                   elevation='DEM', 
-                   horizon_basename='horangle',
-                   horizon_step=7.5, 
-                   aspect='aspect.dem', 
+                   step=7.5,
+                   output='horangle')
+    gs.run_command('r.slope.aspect',
+                   elevation='DEM',
+                   aspect='aspect.dem',
                    slope='slope.dem',
-                   glob_rad='global_rad', 
-                   day=day, 
-                   time=solar_time, 
-                   nprocs=6, 
+                   overwrite=True)
+    gs.run_command('r.sun',
+                   elevation='DEM',
+                   horizon_basename='horangle',
+                   horizon_step=7.5,
+                   aspect='aspect.dem',
+                   slope='slope.dem',
+                   glob_rad='global_rad',
+                   day=day,
+                   time=solar_time,
+                   nprocs=6,
                    linke_value=7,
-                   albedo_value=0.3, 
-                   coeff_bh='cloud_cf', 
+                   albedo_value=0.3,
+                   coeff_bh='cloud_cf',
                    overwrite=True)
     # albedo_value=0.3, overwrite=True)
 
-    #change output resolution
+    # change output resolution
     # res = '4092'  # about 4km
     # gs.run_command('g.region', raster='global_rad', res=res)
-    #gs.run_command('r.resamp.interp', input='global_rad',
+    # gs.run_command('r.resamp.interp', input='global_rad',
     #               output='global_rad_upscaled', method='bicubic', overwrite=True)
-    
+
     inputFileName = os.path.basename(file).split('.')[0]
-    fileNameInGrass = 'global_rad' #'global_rad_upscaled'
+    fileNameInGrass = 'global_rad'  # 'global_rad_upscaled'
     saveOutput(inputFileName, fileNameInGrass, day, time)
 
 
@@ -89,11 +89,11 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
     save current output file as .tif in output folder and also append statistics of this file to a .csv file 
     '''
     # output results stats into CSV (can't append directly)
-    gs.run_command('r.univar', 
+    gs.run_command('r.univar',
                    map=fileNameInGrass,
-                   output='data/cache/stats_cache.csv', 
-                   separator='comma', 
-                   overwrite=True, 
+                   output='data/cache/stats_cache.csv',
+                   separator='comma',
+                   overwrite=True,
                    flags='te')
 
     with open('data/cache/stats_cache.csv', newline='') as cache_csv:
@@ -105,9 +105,9 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
         output_csv.write("\n")
         output_csv.writelines(str(day)+','+str(time)+','+lastLine)
 
-        gs.run_command('r.out.gdal', 
+        gs.run_command('r.out.gdal',
                        input=fileNameInGrass,
-                       output='data/output/'+inputFileName + '_D'+str(day)+'_H'+str(time)+'.tif', type='Float64', 
+                       output='data/output/'+inputFileName + '_D'+str(day)+'_H'+str(time)+'.tif', type='Float64',
                        overwrite=True)
 
 
