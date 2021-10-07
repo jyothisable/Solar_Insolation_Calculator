@@ -1,5 +1,6 @@
 data/input_DEMs/*
 data/input_clouds/*
+data/input_vector_mask/*
 data/output/*
 data/cache/
 __pycache__

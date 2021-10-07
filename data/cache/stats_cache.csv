@@ -1,2 +1,2 @@
 non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90
-483,92,20.6840057373049,876.392761230466,855.708755493161,657.48530225971,657.48530225971,311.522730438661,97046.4115799586,47.3809421089702,317565.40099144,317565.40099144,774.755,806.248,819.51,832.982
+0,1,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan
