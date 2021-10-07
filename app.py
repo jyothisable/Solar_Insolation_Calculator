@@ -111,22 +111,23 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
                        overwrite=True)
 
 
-# input DEM file
-file = 'data/input_DEMs/desert_32m_clipped.tif'
-gs.run_command('r.in.gdal', input=file, output='DEM', overwrite=True)
-# specify range of day [1-365 int] and time [24h float]
-for day in range(1, 32):
-    if day < 10:
-        day = '0' + str(day)
-    else:
-        day = str(day)
-    for time in range(23, 32):  # 11:30am to 3:30pm IST => about 11 to 3pm solar time
-        t = time/2
-        # skip non existant time
-        if day == '05' and t == 11.5:
-            continue
-        elif day == '16' and t == 11.0:
-            continue
-        elif day == '16' and t == 14.0:
-            continue
-        findSolarInsolation(day, t)
+def main():
+    # input DEM file
+    file = 'data/input_DEMs/desert_32m_clipped.tif'
+    gs.run_command('r.in.gdal', input=file, output='DEM', overwrite=True)
+    # specify range of day [1-365 int] and time [24h float]
+    for day in range(1, 2):
+        if day < 10:
+            day = '0' + str(day)
+        else:
+            day = str(day)
+        for time in range(23, 32):  # 11:30am to 3:30pm IST => about 11 to 3pm solar time
+            t = time/2
+            # skip non existant time
+            if day == '05' and t == 11.5:
+                continue
+            elif day == '16' and t == 11.0:
+                continue
+            elif day == '16' and t == 14.0:
+                continue
+            findSolarInsolation(day, t)
