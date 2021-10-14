@@ -1,5 +1,5 @@
-#!/usr/bin/env conda run -n MTP python3
-# =============================================================================
+#!/usr/bin/env python3
+# # =============================================================================
 # Created By  : Athul Jyothis
 # Created Date: 18-08-2021 00:17:21
 # =============================================================================
@@ -12,11 +12,11 @@ use new mapset for new input dem because horizon doesn't overwrite
 """
 import os
 from pathlib import Path
-import csv
 import grass.script as gs
 from datetime import datetime as d
 # change directory because this file is usually imported to grass gis
-os.chdir(os.path.dirname(__file__))
+# os.chdir(os.path.dirname(__file__))
+os.chdir('/home/jyothisable/P.A.R.A/1.Projects/mtp/Softwares/VS code/Solar_Insolation_Calculator')
 
 
 def findSolarInsolation(day, time):
@@ -46,16 +46,8 @@ def findSolarInsolation(day, time):
     solar_time = time - 0.75
     # assigning region => default boundary and location
     gs.run_command('g.region',
-                   raster='DEM')
-    gs.run_command('r.horizon',
-                   elevation='DEM',
-                   step=7.5,
-                   output='horangle')
-    gs.run_command('r.slope.aspect',
-                   elevation='DEM',
-                   aspect='aspect.dem',
-                   slope='slope.dem',
-                   overwrite=True)
+                   vector='ref_vector')
+
     gs.run_command('r.sun',
                    elevation='DEM',
                    horizon_basename='horangle',
@@ -66,7 +58,7 @@ def findSolarInsolation(day, time):
                    day=day,
                    time=solar_time,
                    nprocs=6,
-                   linke_value=7,
+                   linke_value=5,
                    albedo_value=0.3,
                    coeff_bh='cloud_cf',
                    overwrite=True)
@@ -78,7 +70,8 @@ def findSolarInsolation(day, time):
     # gs.run_command('r.resamp.interp', input='global_rad',
     #               output='global_rad_upscaled', method='bicubic', overwrite=True)
 
-    inputFileName = os.path.basename(file).split('.')[0]
+    inputFileName = os.path.basename(file).split(
+        '.')[0] + '_' + os.path.basename(ref_vector).split('.')[0]
     fileNameInGrass = 'global_rad'  # 'global_rad_upscaled'
     saveOutput(inputFileName, fileNameInGrass, day, time)
 
@@ -105,29 +98,50 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
         output_csv.write("\n")
         output_csv.writelines(str(day)+','+str(time)+','+lastLine)
 
-        gs.run_command('r.out.gdal',
-                       input=fileNameInGrass,
-                       output='data/output/'+inputFileName + '_D'+str(day)+'_H'+str(time)+'.tif', type='Float64',
-                       overwrite=True)
+        # gs.run_command('r.out.gdal',
+        #                input=fileNameInGrass,
+        #                output='data/output/'+inputFileName +
+        #                '_D'+str(day)+'_H'+str(time)+'.tif',
+        #                overwrite=True)
 
 
-def main():
-    # input DEM file
-    file = 'data/input_DEMs/desert_32m_clipped.tif'
-    gs.run_command('r.in.gdal', input=file, output='DEM', overwrite=True)
-    # specify range of day [1-365 int] and time [24h float]
-    for day in range(1, 2):
-        if day < 10:
-            day = '0' + str(day)
-        else:
-            day = str(day)
-        for time in range(23, 32):  # 11:30am to 3:30pm IST => about 11 to 3pm solar time
-            t = time/2
-            # skip non existant time
-            if day == '05' and t == 11.5:
-                continue
-            elif day == '16' and t == 11.0:
-                continue
-            elif day == '16' and t == 14.0:
-                continue
-            findSolarInsolation(day, t)
+# input DEM file
+file = 'data/input_DEMs/desert_dem_32m_deg.tif'
+ref_vector = 'data/input_vector_mask_deg/fid_421.gpkg'
+gs.run_command('r.in.gdal',
+               input=file,
+               output='DEM',
+               overwrite=True)
+gs.run_command('v.in.ogr',
+               input=ref_vector,
+               output='ref_vector',
+               overwrite=True)
+
+gs.run_command('g.region',
+               vector='ref_vector')
+
+gs.run_command('r.horizon',
+               elevation='DEM',
+               step=7.5,
+               output='horangle')
+gs.run_command('r.slope.aspect',
+               elevation='DEM',
+               aspect='aspect.dem',
+               slope='slope.dem',
+               overwrite=True)
+# specify range of day [1-365 int] and time [24h float]
+for day in range(1, 32):
+    if day < 10:
+        day = '0' + str(day)
+    else:
+        day = str(day)
+    for time in range(23, 32):  # 11:30am to 3:30pm IST => about 11 to 3pm solar time
+        t = time/2
+        # skip non existant time
+        if day == '05' and t == 11.5:
+            continue
+        elif day == '16' and t == 11.0:
+            continue
+        elif day == '16' and t == 14.0:
+            continue
+        findSolarInsolation(day, t)
