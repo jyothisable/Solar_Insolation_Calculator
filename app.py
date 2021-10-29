@@ -98,6 +98,11 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
                    output='data/output/' + res_m + '/'+inputFileName +
                    '_D'+str(day)+'_H'+str(time)+'.tif',
                    overwrite=True)
+    gs.run_command('r.out.png',
+                   input=fileNameInGrass,
+                   output='data/output/' + res_m + '/'+inputFileName +
+                   '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
+                   overwrite=True)
 
     # bicubic interpolation
     gs.run_command('g.region', raster='global_rad', res=res_deg/2)
@@ -115,6 +120,12 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
                    output=folderpath + '/' + res_m +
                    '_to_' + str(float(res_m[:-2])/2) + 'km'
                    '_D'+str(day)+'_H'+str(time)+'.tif',
+                   overwrite=True)
+    gs.run_command('r.out.png',
+                   input='global_rad_upscaled',
+                   output=folderpath + '/' + res_m +
+                   '_to_' + str(float(res_m[:-2])/2) + 'km'
+                   '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
                    overwrite=True)
 
 
