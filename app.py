@@ -18,56 +18,6 @@ from datetime import datetime as d
 # os.chdir(os.path.dirname(__file__))
 os.chdir('/home/jyothisable/P.A.R.A/1.Projects/mtp/Softwares/VS code/Solar_Insolation_Calculator')
 
-# input DEM file
-file = 'data/input_DEMs/desert_dem_32m_deg.tif'
-ref_vector = 'data/input_vector_mask_deg/full.gpkg'
-gs.run_command('r.in.gdal',
-               input=file,
-               output='DEM',
-               overwrite=True)
-gs.run_command('v.in.ogr',
-               input=ref_vector,
-               output='ref_vector',
-               overwrite=True)
-
-res = {0.03455: '4km',
-       0.017275: '2km',
-       0.0086375: '1km',
-       0.00431875: '0.5km',
-       0.002159375: '0.25km'}
-
-for res_deg, res_m in res.items():
-    gs.run_command('g.region',
-                   vector='ref_vector',
-                   res=res_deg)
-
-    gs.run_command('r.horizon',
-                   elevation='DEM',
-                   step=7.5,
-                   output='horangle')
-    gs.run_command('r.slope.aspect',
-                   elevation='DEM',
-                   aspect='aspect.dem',
-                   slope='slope.dem',
-                   overwrite=True)
-    # specify range of day [1-365 int] and time [24h float]
-    for day in range(1, 32):
-        if day < 10:
-            day = '0' + str(day)
-        else:
-            day = str(day)
-        # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
-        for time in range(23, 32):
-            t = time/2
-            # # skip non existant time
-            # if day == '05' and t == 11.5:
-            #     continue
-            # elif day == '16' and t == 11.0:
-            #     continue
-            # elif day == '16' and t == 14.0:
-            #     continue
-            findSolarInsolation(day, t)
-
 
 def findSolarInsolation(day, time):
     '''
@@ -122,6 +72,7 @@ def findSolarInsolation(day, time):
 
     inputFileName = res_m + '_' + os.path.basename(ref_vector).split('.')[0]
     fileNameInGrass = 'global_rad'  # 'global_rad_upscaled'
+    validate(time_UTC)
     saveOutput(inputFileName, fileNameInGrass, day, time)
 
 
@@ -160,46 +111,47 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
                    overwrite=True)
 
     # bicubic interpolation
-    gs.run_command('g.region', raster='global_rad', res=res_deg/2)
-    gs.run_command('r.resamp.interp', input='global_rad',
-                   output='global_rad_upscaled', method='bicubic', overwrite=True)
+    # gs.run_command('g.region', raster='global_rad', res=res_deg/2)
+    # gs.run_command('r.resamp.interp', input='global_rad',
+    #                output='global_rad_upscaled', method='bicubic', overwrite=True)
 
-    # save interpolation
-    folderpath = 'data/output/' + res_m + '_to_' + \
-        str(float(res_m[:-2])/2) + 'km' + '/'
-    if not os.path.exists(folderpath):
-        os.makedirs(folderpath)
+    # # save interpolation
+    # folderpath = 'data/output/' + res_m + '_to_' + \
+    #     str(float(res_m[:-2])/2) + 'km' + '/'
+    # if not os.path.exists(folderpath):
+    #     os.makedirs(folderpath)
 
-    gs.run_command('r.out.gdal',
-                   input='global_rad_upscaled',
-                   output=folderpath + '/' + res_m +
-                   '_to_' + str(float(res_m[:-2])/2) + 'km'
-                   '_D'+str(day)+'_H'+str(time)+'.tif',
-                   overwrite=True)
-    gs.run_command('r.out.png',
-                   input='global_rad_upscaled',
-                   output=folderpath + '/' + res_m +
-                   '_to_' + str(float(res_m[:-2])/2) + 'km'
-                   '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
-                   overwrite=True)
+    # gs.run_command('r.out.gdal',
+    #                input='global_rad_upscaled',
+    #                output=folderpath + '/' + res_m +
+    #                '_to_' + str(float(res_m[:-2])/2) + 'km'
+    #                '_D'+str(day)+'_H'+str(time)+'.tif',
+    #                overwrite=True)
+    # gs.run_command('r.out.png',
+    #                input='global_rad_upscaled',
+    #                output=folderpath + '/' + res_m +
+    #                '_to_' + str(float(res_m[:-2])/2) + 'km'
+    #                '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
+    #                overwrite=True)
 
 
-def validate():
+def validate(time_UTC):
     '''validate with 4km satelite data => upscale to 4km then take RMS'''
     # input validation data
     gs.run_command('r.in.gdal',
-                   input='data/input_validation/clip_clip_3DIMG_'+day+'JAN2020_' + time_UTC+'*.tif',
+                   input='data/input_validation/clip_3DIMG_' +
+                   day+'JAN2020_' + time_UTC + '_L2C_INS_INS.tif',
                    output='validation',
                    overwrite=True, flags='o')
     # upscale output radiation to 4km
-    gs.run_command('g.region', raster='global_rad', res=res[0.03455])
+    gs.run_command('g.region', raster='global_rad', res=0.03455)
     gs.run_command('r.resamp.interp', input='global_rad',
                    output='global_rad_4Km', method='bicubic', overwrite=True)
     # compare using raster calculator
     gs.run_command('r.mapcalc.simple',
                    a='validation',
-                   b='global_rad_4Km'
-                   expression='result = (A - B)**2',
+                   b='global_rad_4Km',
+                   expression='result = (A - B)*(A - B)',
                    output='comp',
                    overwrite=True)
 
@@ -231,3 +183,54 @@ def validate():
                    output='data/output/' + res_m + '_validation' + '/' + res_m + '_validation' +
                    '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
                    overwrite=True)
+
+
+# input DEM file
+file = 'data/input_DEMs/desert_dem_32m_deg.tif'
+ref_vector = 'data/input_vector_mask_deg/full.gpkg'
+gs.run_command('r.in.gdal',
+               input=file,
+               output='DEM',
+               overwrite=True)
+gs.run_command('v.in.ogr',
+               input=ref_vector,
+               output='ref_vector',
+               overwrite=True)
+
+res = {0.03455: '4km',
+       0.017275: '2km',
+       0.0086375: '1km',
+       0.00431875: '0.5km',
+       0.002159375: '0.25km'}
+
+for res_deg, res_m in res.items():
+    gs.run_command('g.region',
+                   vector='ref_vector',
+                   res=res_deg)
+
+    gs.run_command('r.horizon',
+                   elevation='DEM',
+                   step=7.5,
+                   output='horangle')
+    gs.run_command('r.slope.aspect',
+                   elevation='DEM',
+                   aspect='aspect.dem',
+                   slope='slope.dem',
+                   overwrite=True)
+    # specify range of day [1-365 int] and time [24h float]
+    for day in range(1, 32):
+        if day < 10:
+            day = '0' + str(day)
+        else:
+            day = str(day)
+        # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
+        for time in range(23, 32):
+            t = time/2
+            # # skip non existant time
+            # if day == '05' and t == 11.5:
+            #     continue
+            # elif day == '16' and t == 11.0:
+            #     continue
+            # elif day == '16' and t == 14.0:
+            #     continue
+            findSolarInsolation(day, t)
