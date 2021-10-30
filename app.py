@@ -18,6 +18,56 @@ from datetime import datetime as d
 # os.chdir(os.path.dirname(__file__))
 os.chdir('/home/jyothisable/P.A.R.A/1.Projects/mtp/Softwares/VS code/Solar_Insolation_Calculator')
 
+# input DEM file
+file = 'data/input_DEMs/desert_dem_32m_deg.tif'
+ref_vector = 'data/input_vector_mask_deg/full.gpkg'
+gs.run_command('r.in.gdal',
+               input=file,
+               output='DEM',
+               overwrite=True)
+gs.run_command('v.in.ogr',
+               input=ref_vector,
+               output='ref_vector',
+               overwrite=True)
+
+res = {0.03455: '4km',
+       0.017275: '2km',
+       0.0086375: '1km',
+       0.00431875: '0.5km',
+       0.002159375: '0.25km'}
+
+for res_deg, res_m in res.items():
+    gs.run_command('g.region',
+                   vector='ref_vector',
+                   res=res_deg)
+
+    gs.run_command('r.horizon',
+                   elevation='DEM',
+                   step=7.5,
+                   output='horangle')
+    gs.run_command('r.slope.aspect',
+                   elevation='DEM',
+                   aspect='aspect.dem',
+                   slope='slope.dem',
+                   overwrite=True)
+    # specify range of day [1-365 int] and time [24h float]
+    for day in range(1, 32):
+        if day < 10:
+            day = '0' + str(day)
+        else:
+            day = str(day)
+        # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
+        for time in range(23, 32):
+            t = time/2
+            # # skip non existant time
+            # if day == '05' and t == 11.5:
+            #     continue
+            # elif day == '16' and t == 11.0:
+            #     continue
+            # elif day == '16' and t == 14.0:
+            #     continue
+            findSolarInsolation(day, t)
+
 
 def findSolarInsolation(day, time):
     '''
@@ -30,6 +80,11 @@ def findSolarInsolation(day, time):
     if min == '0':
         min = '00'
     time_UTC = '0'+str(t//100) + min if t//100 < 10 else str(t//100) + min
+    if not os.path.exists('data/input_clouds/3DIMG_'+day+'JAN2020_' + time_UTC+'_L2B_CMK_CMK.tif'):
+        with open('data/output/missing_data.csv') as missing:
+            missing.write("\n")
+            missing.writelines('JAN2020 ' + time_UTC)
+
     # input cloud data
     gs.run_command('r.in.gdal',
                    input='data/input_clouds/3DIMG_'+day+'JAN2020_' + time_UTC+'_L2B_CMK_CMK.tif',
@@ -129,52 +184,50 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
                    overwrite=True)
 
 
-# input DEM file
-file = 'data/input_DEMs/desert_dem_32m_deg.tif'
-ref_vector = 'data/input_vector_mask_deg/full.gpkg'
-gs.run_command('r.in.gdal',
-               input=file,
-               output='DEM',
-               overwrite=True)
-gs.run_command('v.in.ogr',
-               input=ref_vector,
-               output='ref_vector',
-               overwrite=True)
-
-res = {0.03455: '4km',
-       0.017275: '2km',
-       0.0086375: '1km',
-       0.00431875: '0.5km',
-       0.002159375: '0.25km'}
-
-for res_deg, res_m in res.items():
-    gs.run_command('g.region',
-                   vector='ref_vector',
-                   res=res_deg)
-
-    gs.run_command('r.horizon',
-                   elevation='DEM',
-                   step=7.5,
-                   output='horangle')
-    gs.run_command('r.slope.aspect',
-                   elevation='DEM',
-                   aspect='aspect.dem',
-                   slope='slope.dem',
+def validate():
+    '''validate with 4km satelite data => upscale to 4km then take RMS'''
+    # input validation data
+    gs.run_command('r.in.gdal',
+                   input='data/input_validation/clip_clip_3DIMG_'+day+'JAN2020_' + time_UTC+'*.tif',
+                   output='validation',
+                   overwrite=True, flags='o')
+    # upscale output radiation to 4km
+    gs.run_command('g.region', raster='global_rad', res=res[0.03455])
+    gs.run_command('r.resamp.interp', input='global_rad',
+                   output='global_rad_4Km', method='bicubic', overwrite=True)
+    # compare using raster calculator
+    gs.run_command('r.mapcalc.simple',
+                   a='validation',
+                   b='global_rad_4Km'
+                   expression='result = (A - B)**2',
+                   output='comp',
                    overwrite=True)
-    # specify range of day [1-365 int] and time [24h float]
-    for day in range(1, 32):
-        if day < 10:
-            day = '0' + str(day)
-        else:
-            day = str(day)
-        # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
-        for time in range(23, 32):
-            t = time/2
-            # skip non existant time
-            if day == '05' and t == 11.5:
-                continue
-            elif day == '16' and t == 11.0:
-                continue
-            elif day == '16' and t == 14.0:
-                continue
-            findSolarInsolation(day, t)
+
+    # output comparison raster
+    gs.run_command('r.univar',
+                   map='comp',
+                   output='data/cache/stats_cache.csv',
+                   separator='comma',
+                   overwrite=True,
+                   flags='te')
+    if not os.path.exists('data/output/' + res_m + '_validation' + '/'):
+        os.makedirs('data/output/' + res_m + '_validation' + '/')
+    with open('data/cache/stats_cache.csv', newline='') as cache_csv:
+        lastLine = cache_csv.read().splitlines()[-1]
+    with open('data/output/' + res_m + '_validation' + '/' + res_m + '_validation' + '_stats.csv', 'a') as output_csv:
+        if os.stat('data/output/' + res_m + '_validation' + '/' + res_m + '_validation' + '_stats.csv').st_size == 0:
+            output_csv.writelines(
+                "day,time(IST),non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
+        output_csv.write("\n")
+        output_csv.writelines(str(day)+','+str(time)+','+lastLine)
+
+    gs.run_command('r.out.gdal',
+                   input='comp',
+                   output='data/output/' + res_m + '_validation' + '/' + res_m + '_validation' +
+                   '_D'+str(day)+'_H'+str(time)+'.tif',
+                   overwrite=True)
+    gs.run_command('r.out.png',
+                   input='comp',
+                   output='data/output/' + res_m + '_validation' + '/' + res_m + '_validation' +
+                   '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
+                   overwrite=True)
