@@ -24,6 +24,12 @@ def findSolarInsolation(day, time):
     inputs the day and time to find solar insolation for all the files present in input_DEMs and output
     upscaled version of the insolation data to output folder. stats about this is also available in .csv file
     '''
+    # assigning region => default boundary and location
+    gs.run_command('g.region',
+                   #    vector='ref_vector',
+                   raster='DEM',
+                   res=res_deg)
+
     # convert time format  # todo use time module to do this
     t = int(time*100)-550
     min = str(int(((t % 100)/100)*60))
@@ -44,16 +50,12 @@ def findSolarInsolation(day, time):
     # cleaning cloud data
     gs.run_command('r.mapcalc.simple',
                    a='cloud',
-                   expression='result =(1- A*(A<=1)*0.5)',
+                   expression='result =(0.9- A*(A<=1)*0.5)',
                    output='cloud_cf',
                    overwrite=True)
 
     # solar time only applicable for this data set => need to change #todo find a module to calc this
-    solar_time = time - 0.75
-    # assigning region => default boundary and location
-    gs.run_command('g.region',
-                   vector='ref_vector',
-                   res=res_deg)
+    solar_time = time - 0.7
 
     gs.run_command('r.sun',
                    elevation='DEM',
@@ -65,7 +67,7 @@ def findSolarInsolation(day, time):
                    day=day,
                    time=solar_time,
                    nprocs=6,
-                   linke_value=7.5,
+                   linke_value=8,
                    albedo_value=0.3,
                    coeff_bh='cloud_cf',
                    overwrite=True)
@@ -83,7 +85,7 @@ def findSolarInsolation(day, time):
                    overwrite=True, flags='o')
     # upscale output radiation to 4km
     gs.run_command('g.region',
-                   vector='ref_vector',
+                   #    vector='ref_vector',
                    res=0.03455)
     gs.run_command('r.resamp.interp',
                    input='global_rad',
@@ -204,12 +206,12 @@ gs.run_command('v.in.ogr',
 # 0.002159375: '0.25km',
 # 0.0002714 : '0.03km',
 
-res = {0.002159375: '0.25km',
-       0.0002714: '0.03km', }
+res = {0.03455: '4km', }
 
 for res_deg, res_m in res.items():
     gs.run_command('g.region',
-                   vector='ref_vector',
+                   raster='DEM',
+                   #    vector='ref_vector',
                    res=res_deg)
 
     gs.run_command('r.horizon',
