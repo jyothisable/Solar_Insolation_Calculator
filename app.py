@@ -6,9 +6,8 @@
 """
 The module has been build for calculating the solar insolation of a region using DEM (digital elevation model)
 using grass gis
-#Importnet
-clear output data folder manually before running again
-use new mapset for new input dem because horizon doesn't overwrite
+#Important
+clear csv files in output data folder manually before running again
 """
 import os
 from pathlib import Path
@@ -50,7 +49,7 @@ def findSolarInsolation(day, time):
     # cleaning cloud data
     gs.run_command('r.mapcalc.simple',
                    a='cloud',
-                   expression='result =(0.9- A*(A<=1)*0.5)',
+                   expression='result =(0.995- A*(A<=1)*0.5)',
                    output='cloud_cf',
                    overwrite=True)
 
@@ -99,6 +98,20 @@ def findSolarInsolation(day, time):
                    expression='result = ((A - B)/A)*((A - B)/A)',
                    output='comp',
                    overwrite=True)
+    if counter > 1:
+        # add comp_timeAvg raster to current raster
+        gs.run_command('r.mapcalc.simple',
+                       a='comp',
+                       b='comp_timeAvg',
+                       expression='result = A + B',
+                       output='comp_timeAvg',
+                       overwrite=True)
+    # copy previous raster to comp_timeAvg
+    if counter == 1:
+        gs.run_command('g.copy',
+                       raster='comp,comp_timeAvg',
+                       overwrite=True)
+
     # output comparison raster
     gs.run_command('r.univar',
                    map='comp',
@@ -206,7 +219,10 @@ gs.run_command('v.in.ogr',
 # 0.002159375: '0.25km',
 # 0.0002714 : '0.03km',
 
-res = {0.03455: '4km', }
+res = {0.03455: '4km',
+       0.0086375: '1km',
+       0.002159375: '0.25km'
+       }
 
 for res_deg, res_m in res.items():
     gs.run_command('g.region',
@@ -224,8 +240,10 @@ for res_deg, res_m in res.items():
                    slope='slope.dem',
                    overwrite=True)
 
+    counter = 0
     # specify range of day [1-365 int] and time [24h float]
     for day in range(1, 32):
+        counter += 1
         if day < 10:
             day = '0' + str(day)
         else:
@@ -241,3 +259,27 @@ for res_deg, res_m in res.items():
             elif day == '16' and t == 14.0:
                 continue
             findSolarInsolation(day, t)
+
+    # take average of comp_timeAvg with counter
+    gs.run_command('r.mapcalc.simple',
+                   a='comp_timeAvg',
+                   expression='result = sqrt(A/' + str(counter) + ')',
+                   output='comp_timeAvg',
+                   overwrite=True)
+    gs.run_command('r.univar',
+                   map='comp_timeAvg',
+                   output='data/output/' + res_m + '_validation' +
+                       '/' + res_m + '_timeAvg_stats.csv',
+                   separator='comma',
+                   overwrite=True,
+                   flags='te')
+    # export comp_timeAvg as tif
+    gs.run_command('r.out.gdal',
+                   input='comp_timeAvg',
+                   output='data/output/' + res_m + '_validation' +
+                   '/' + res_m + '_timeAvg_validation.tif',
+                   overwrite=True)
+    # remove comp_timeAvg raster
+    gs.run_command('g.remove',
+                   type='raster',
+                   name='comp_timeAvg')
