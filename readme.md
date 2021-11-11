@@ -14,6 +14,7 @@ some of them include sun angle, air mass, day length, cloud coverage, and pollut
 ## Requirements
 
 - [Grass GIS ](https://grass.osgeo.org/download/) version 7.8 or higher
+- python 3.6 or higher
 
 ## How to use
 
