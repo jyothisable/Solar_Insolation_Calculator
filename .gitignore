@@ -1,9 +1,8 @@
-data/inputs/DEMs/*
-data/inputs/clouds/*
+data/inputs/DEMs/*.tif
+data/inputs/clouds/*.tif
 data/inputs/validation/*
 data/inputs/vector_mask_deg/*
 data/outputs/*
 data/.cache/
 __pycache__
 .vscode
-test.py
