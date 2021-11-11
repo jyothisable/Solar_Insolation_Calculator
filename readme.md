@@ -30,7 +30,7 @@ Solar Insolation from satellite data is not at high resolution (about 4km spatia
 
 1. Download the whole repo or clone it
 2. Place the input DEM (Digital Elevation Model), cloud data and validation data in respective folders in data/inputs folder
-3. Change the data and time range in app.py if required
+3. Change the date and time range in app.py if required
 4. Open GRASS GIS and import app.py into it and then run it or copy paste the code into grass gis
 5. Result will be available in data/output
 6. A CSV file is also created saving the stats of each simulation
