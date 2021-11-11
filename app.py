@@ -45,7 +45,7 @@ def findSolarInsolation(day, time):
     # cleaning cloud data
     gs.run_command('r.mapcalc.simple',
                    a='cloud',
-                   expression='result =('+str(k)+'- A*(A<=1)*0.5)',  # 0.995
+                   expression='result =(1 - A*(A<=1)*0.5)',
                    output='cloud_cf',
                    overwrite=True)
 
@@ -222,66 +222,66 @@ res = {0.03455: '4km',
        0.0086375: '1km',
        0.002159375: '0.25km'
        }
-for k in [0.7, 0, 8, 0.9]:
-    for res_deg, res_m in res.items():
-        gs.run_command('g.region',
-                       raster='DEM',
-                       #    vector='ref_vector',
-                       res=res_deg)
 
-        gs.run_command('r.horizon',
-                       elevation='DEM',
-                       step=7.5,
-                       output='horangle')
-        gs.run_command('r.slope.aspect',
-                       elevation='DEM',
-                       aspect='aspect.dem',
-                       slope='slope.dem',
-                       overwrite=True)
+for res_deg, res_m in res.items():
+    gs.run_command('g.region',
+                   raster='DEM',
+                   #    vector='ref_vector',
+                   res=res_deg)
 
-        counter = 0
-        # specify range of day [1-365 int] and time [24h float]
-        for day in range(1, 32):
-            if day < 10:
-                day = '0' + str(day)
-            else:
-                day = str(day)
-            # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
-            for time in range(23, 32):
-                t = time/2
-                # skip non existant time (no data from satellite)
-                if day == '05' and t == 11.5:
-                    continue
-                elif day == '16' and t == 11.0:
-                    continue
-                elif day == '16' and t == 14.0:
-                    continue
-                counter += 1
-                # skip extremely cloudy days
-                if counter in range(41, 64) or counter in range(104, 118) or counter in range(132, 143):
-                    continue
-                findSolarInsolation(day, t)
+    gs.run_command('r.horizon',
+                   elevation='DEM',
+                   step=7.5,
+                   output='horangle')
+    gs.run_command('r.slope.aspect',
+                   elevation='DEM',
+                   aspect='aspect.dem',
+                   slope='slope.dem',
+                   overwrite=True)
 
-        # take average of comp_timeAvg with counter
-        gs.run_command('r.mapcalc.simple',
-                       a='comp_timeAvg',
-                       expression='result = sqrt(A/' + str(counter) + ')',
-                       output='comp_timeAvg',
-                       overwrite=True)
-        gs.run_command('r.univar',
-                       map='comp_timeAvg',
-                       output='data/outputs/' + res_m + '_validation' +
+    counter = 0
+    # specify range of day [1-365 int] and time [24h float]
+    for day in range(1, 32):
+        if day < 10:
+            day = '0' + str(day)
+        else:
+            day = str(day)
+        # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
+        for time in range(23, 32):
+            t = time/2
+            # skip non existant time (no data from satellite)
+            if day == '05' and t == 11.5:
+                continue
+            elif day == '16' and t == 11.0:
+                continue
+            elif day == '16' and t == 14.0:
+                continue
+            counter += 1
+            # skip extremely cloudy days
+            if counter in range(41, 64) or counter in range(104, 118) or counter in range(132, 143):
+                continue
+            findSolarInsolation(day, t)
+
+    # take average of comp_timeAvg with counter
+    gs.run_command('r.mapcalc.simple',
+                   a='comp_timeAvg',
+                   expression='result = sqrt(A/' + str(counter) + ')',
+                   output='comp_timeAvg',
+                   overwrite=True)
+    gs.run_command('r.univar',
+                   map='comp_timeAvg',
+                   output='data/outputs/' + res_m + '_validation' +
                        '/' + res_m + '_timeAvg_stats.csv',
-                       separator='comma',
-                       overwrite=True,
-                       flags='te')
-        # export comp_timeAvg as tif
-        gs.run_command('r.out.gdal',
-                       input='comp_timeAvg',
-                       output='data/outputs/' + res_m + '_validation' +
-                       '/' + res_m + '_timeAvg_validation.tif',
-                       overwrite=True)
-        # remove comp_timeAvg raster
-        gs.run_command('g.remove',
-                       type='raster',
-                       name='comp_timeAvg')
+                   separator='comma',
+                   overwrite=True,
+                   flags='te')
+    # export comp_timeAvg as tif
+    gs.run_command('r.out.gdal',
+                   input='comp_timeAvg',
+                   output='data/outputs/' + res_m + '_validation' +
+                   '/' + res_m + '_timeAvg_validation.tif',
+                   overwrite=True)
+    # remove comp_timeAvg raster
+    gs.run_command('g.remove',
+                   type='raster',
+                   name='comp_timeAvg')
