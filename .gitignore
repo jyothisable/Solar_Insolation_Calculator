@@ -1,6 +1,8 @@
 data/inputs/DEMs/*.tif
 data/inputs/clouds/*.tif
+data/inputs/clouds/*.tif.aux.xml
 data/inputs/validation/*.tif
+data/inputs/validation/*.tif.aux.xml
 data/inputs/vector_mask/*
 data/outputs/*
 data/.cache/
