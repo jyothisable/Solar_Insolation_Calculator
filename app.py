@@ -6,21 +6,22 @@
 """
 The module has been build for calculating the solar insolation of a region using DEM (digital elevation model)
 using grass gis
-#Important
-clear csv files in output data folder manually before running again
+#Important note
+clear csv files in output data folder manually before running again (otherwise it would append)
 """
 import os
 from pathlib import Path
 import grass.script as gs
 from datetime import datetime as d
 # change directory because this file is usually imported to grass gis
-# os.chdir(os.path.dirname(__file__))
+# os.chdir(os.path.dirname(__file__))  #todo importing not working in linux
+# Temperory fix : given absolute path to the this file below and just copy paste the code to grass gis (importing not working in linux)
 os.chdir('/home/jyothisable/P.A.R.A/1.Projects/mtp/Softwares/VS code/Solar_Insolation_Calculator')
 
 
 def findSolarInsolation(day, time):
     '''
-    inputs the day and time to find solar insolation for all the files present in input_DEMs and output
+    inputs the day and time to find solar insolation for Digital Elevation model present in inputs/DEMs and output
     upscaled version of the insolation data to output folder. stats about this is also available in .csv file
     '''
     # assigning region => default boundary and location
@@ -29,33 +30,29 @@ def findSolarInsolation(day, time):
                    raster='DEM',
                    res=res_deg)
 
-    # convert time format  # todo use time module to do this
+    # convert time format  # todo use datetime module to do this
     t = int(time*100)-550
     min = str(int(((t % 100)/100)*60))
     if min == '0':
         min = '00'
     time_UTC = '0'+str(t//100) + min if t//100 < 10 else str(t//100) + min
-    # if not os.path.exists('data/input_clouds/3DIMG_'+day+'JAN2020_' + time_UTC+'_L2B_CMK_CMK.tif'):
-    #     with open('data/output/missing_data.csv') as missing:
-    #         missing.write("\n")
-    #         missing.writelines('JAN2020 ' + time_UTC)
-    #     return
 
     # input cloud data
     gs.run_command('r.in.gdal',
-                   input='data/input_clouds/3DIMG_'+day+'JAN2020_' + time_UTC+'_L2B_CMK_CMK.tif',
+                   input='data/inputs/clouds/3DIMG_'+day+'JAN2020_' + time_UTC+'_L2B_CMK_CMK.tif',
                    output='cloud',
                    overwrite=True, flags='o')
     # cleaning cloud data
     gs.run_command('r.mapcalc.simple',
                    a='cloud',
-                   expression='result =(0.995- A*(A<=1)*0.5)',
+                   expression='result =(0.995- A*(A<=1)*0.5)',  # 0.995
                    output='cloud_cf',
                    overwrite=True)
 
-    # solar time only applicable for this data set => need to change #todo find a module to calc this
+    # finding solar time (only applicable for this location) => need to change #todo find a module to calc this
     solar_time = time - 0.7
 
+    # calculate solar insolation
     gs.run_command('r.sun',
                    elevation='DEM',
                    horizon_basename='horangle',
@@ -78,7 +75,7 @@ def findSolarInsolation(day, time):
     '''validate with 4km satelite data => upscale to 4km then take RMS'''
     # input validation data
     gs.run_command('r.in.gdal',
-                   input='data/input_validation/clip_3DIMG_' +
+                   input='data/inputs/validation/clip_3DIMG_' +
                    day+'JAN2020_' + time_UTC + '_L2C_INS_INS.tif',
                    output='validation',
                    overwrite=True, flags='o')
@@ -115,16 +112,16 @@ def findSolarInsolation(day, time):
     # output comparison raster
     gs.run_command('r.univar',
                    map='comp',
-                   output='data/cache/stats_cache.csv',
+                   output='data/.cache/stats_cache.csv',
                    separator='comma',
                    overwrite=True,
                    flags='te')
-    if not os.path.exists('data/output/' + res_m + '_validation' + '/'):
-        os.makedirs('data/output/' + res_m + '_validation' + '/')
-    with open('data/cache/stats_cache.csv', newline='') as cache_csv:
+    if not os.path.exists('data/outputs/' + res_m + '_validation' + '/'):
+        os.makedirs('data/outputs/' + res_m + '_validation' + '/')
+    with open('data/.cache/stats_cache.csv', newline='') as cache_csv:
         lastLine = cache_csv.read().splitlines()[-1]
-    with open('data/output/' + res_m + '_validation' + '/' + res_m + '_validation' + '_stats.csv', 'a') as output_csv:
-        if os.stat('data/output/' + res_m + '_validation' + '/' + res_m + '_validation' + '_stats.csv').st_size == 0:
+    with open('data/outputs/' + res_m + '_validation' + '/' + res_m + '_validation' + '_stats.csv', 'a') as output_csv:
+        if os.stat('data/outputs/' + res_m + '_validation' + '/' + res_m + '_validation' + '_stats.csv').st_size == 0:
             output_csv.writelines(
                 "day,time(IST),non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
         output_csv.write("\n")
@@ -132,12 +129,12 @@ def findSolarInsolation(day, time):
 
     gs.run_command('r.out.gdal',
                    input='comp',
-                   output='data/output/' + res_m + '_validation' + '/' + res_m + '_validation' +
+                   output='data/outputs/' + res_m + '_validation' + '/' + res_m + '_validation' +
                    '_D'+str(day)+'_H'+str(time)+'.tif',
                    overwrite=True)
     gs.run_command('r.out.png',
                    input='comp',
-                   output='data/output/' + res_m + '_validation' + '/' + res_m + '_validation' +
+                   output='data/outputs/' + res_m + '_validation' + '/' + res_m + '_validation' +
                    '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
                    overwrite=True)
     saveOutput(inputFileName, fileNameInGrass, day, time)
@@ -151,16 +148,16 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
     # output results stats into CSV (can't append directly)
     gs.run_command('r.univar',
                    map=fileNameInGrass,
-                   output='data/cache/stats_cache.csv',
+                   output='data/.cache/stats_cache.csv',
                    separator='comma',
                    overwrite=True,
                    flags='te')
-    if not os.path.exists('data/output/' + res_m + '/'):
-        os.makedirs('data/output/' + res_m + '/')
-    with open('data/cache/stats_cache.csv', newline='') as cache_csv:
+    if not os.path.exists('data/outputs/' + res_m + '/'):
+        os.makedirs('data/outputs/' + res_m + '/')
+    with open('data/.cache/stats_cache.csv', newline='') as cache_csv:
         lastLine = cache_csv.read().splitlines()[-1]
-    with open('data/output/' + res_m + '/' + inputFileName + '_stats.csv', 'a') as output_csv:
-        if os.stat('data/output/' + res_m + '/' + inputFileName + '_stats.csv').st_size == 0:
+    with open('data/outputs/' + res_m + '/' + inputFileName + '_stats.csv', 'a') as output_csv:
+        if os.stat('data/outputs/' + res_m + '/' + inputFileName + '_stats.csv').st_size == 0:
             output_csv.writelines(
                 "day,time(IST),non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
         output_csv.write("\n")
@@ -168,12 +165,12 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
 
     gs.run_command('r.out.gdal',
                    input=fileNameInGrass,
-                   output='data/output/' + res_m + '/'+inputFileName +
+                   output='data/outputs/' + res_m + '/'+inputFileName +
                    '_D'+str(day)+'_H'+str(time)+'.tif',
                    overwrite=True)
     gs.run_command('r.out.png',
                    input=fileNameInGrass,
-                   output='data/output/' + res_m + '/'+inputFileName +
+                   output='data/outputs/' + res_m + '/'+inputFileName +
                    '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
                    overwrite=True)
 
@@ -183,7 +180,7 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
     #                output='global_rad_upscaled', method='bicubic', overwrite=True)
 
     # # save interpolation
-    # folderpath = 'data/output/' + res_m + '_to_' + \
+    # folderpath = 'data/outputs/' + res_m + '_to_' + \
     #     str(float(res_m[:-2])/2) + 'km' + '/'
     # if not os.path.exists(folderpath):
     #     os.makedirs(folderpath)
@@ -203,17 +200,18 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
 
 
 # input DEM file
-file = 'data/input_DEMs/desert_dem_32m_deg.tif'
-ref_vector = 'data/input_vector_mask_deg/full.gpkg'
+file = 'data/inputs/DEMs/desert_dem_32m_deg.tif'
+# ref_vector = 'data/inputs/vector_mask_deg/full.gpkg'
 gs.run_command('r.in.gdal',
                input=file,
                output='DEM',
                overwrite=True)
-gs.run_command('v.in.ogr',
-               input=ref_vector,
-               output='ref_vector',
-               overwrite=True)
+# gs.run_command('v.in.ogr',
+#                input=ref_vector,
+#                output='ref_vector',
+#                overwrite=True)
 
+# deg: Km
 # 0.03455: '4km',
 # 0.0086375: '1km',
 # 0.002159375: '0.25km',
@@ -243,7 +241,6 @@ for res_deg, res_m in res.items():
     counter = 0
     # specify range of day [1-365 int] and time [24h float]
     for day in range(1, 32):
-        counter += 1
         if day < 10:
             day = '0' + str(day)
         else:
@@ -251,12 +248,16 @@ for res_deg, res_m in res.items():
         # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
         for time in range(23, 32):
             t = time/2
-            # skip non existant time
+            # skip non existant time (no data from satellite)
             if day == '05' and t == 11.5:
                 continue
             elif day == '16' and t == 11.0:
                 continue
             elif day == '16' and t == 14.0:
+                continue
+            counter += 1
+            # skip extremely cloudy days
+            if counter in range(41, 64) or counter in range(104, 118) or counter in range(132, 143):
                 continue
             findSolarInsolation(day, t)
 
@@ -268,7 +269,7 @@ for res_deg, res_m in res.items():
                    overwrite=True)
     gs.run_command('r.univar',
                    map='comp_timeAvg',
-                   output='data/output/' + res_m + '_validation' +
+                   output='data/outputs/' + res_m + '_validation' +
                        '/' + res_m + '_timeAvg_stats.csv',
                    separator='comma',
                    overwrite=True,
@@ -276,7 +277,7 @@ for res_deg, res_m in res.items():
     # export comp_timeAvg as tif
     gs.run_command('r.out.gdal',
                    input='comp_timeAvg',
-                   output='data/output/' + res_m + '_validation' +
+                   output='data/outputs/' + res_m + '_validation' +
                    '/' + res_m + '_timeAvg_validation.tif',
                    overwrite=True)
     # remove comp_timeAvg raster

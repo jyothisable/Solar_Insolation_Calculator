@@ -1,9 +1,9 @@
-data/input_DEMs/*
-data/input_clouds/*
-data/input_validation/*
-data/input_vector_mask_deg/*
-data/output/*
-data/cache/
+data/inputs/DEMs/*
+data/inputs/clouds/*
+data/inputs/validation/*
+data/inputs/vector_mask_deg/*
+data/outputs/*
+data/.cache/
 __pycache__
 .vscode
 test.py
