@@ -4,6 +4,7 @@ data/inputs/clouds/*.tif.aux.xml
 data/inputs/validation/*.tif
 data/inputs/validation/*.tif.aux.xml
 data/inputs/vector_mask/*
+data/outputs/prev/*
 data/outputs/*/*.tif
 data/outputs/*/*.png
 data/outputs/*/*.tif.aux.xml
