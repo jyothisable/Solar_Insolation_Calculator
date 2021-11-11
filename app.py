@@ -201,7 +201,7 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
 
 # input DEM file
 file = 'data/inputs/DEMs/desert_dem_32m_deg.tif'
-# ref_vector = 'data/inputs/vector_mask_deg/full.gpkg'
+# ref_vector = 'data/inputs/vector_mask/full.gpkg'
 gs.run_command('r.in.gdal',
                input=file,
                output='DEM',

@@ -1,7 +1,7 @@
 data/inputs/DEMs/*.tif
 data/inputs/clouds/*.tif
 data/inputs/validation/*
-data/inputs/vector_mask_deg/*
+data/inputs/vector_mask/*
 data/outputs/*
 data/.cache/
 __pycache__
