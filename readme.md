@@ -11,6 +11,16 @@ some of them include sun angle, air mass, day length, cloud coverage, and pollut
 
 ![insolation](https://useruploads.socratic.org/q8fXA67jQf6ebdl6yEG9_energy_balance.jpg)
 
+## Importance
+
+It is important to have values for insolation at certain positions on the Earth as these figures are used to help determine the size and output of solar power systems. Values for insolation can help to determine the expected output for solar panels and to understand where on Earth solar panels would be most effective.
+
+As well, insolation is an important consideration in construction. When constructing a building in a particular climate, it is important to understand what the temperature and insolation will be like to ensure maximum comfort and energy efficient building design.
+
+### why calculate insolation when we can measure from satellite data ?
+
+Solar Insolation from satellite data is not at high resolution (about 4km spatial resolution and 30min temporal resolution), but there is a need to have high resolution insolation data for designing small scale solar power systems in building.
+
 ## Requirements
 
 - [Grass GIS ](https://grass.osgeo.org/download/) version 7.8 or higher

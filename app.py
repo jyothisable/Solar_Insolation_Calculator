@@ -69,7 +69,8 @@ def findSolarInsolation(day, time):
                    overwrite=True)
     # albedo_value=0.3, overwrite=True)
 
-    inputFileName = res_m + '_' + os.path.basename(ref_vector).split('.')[0]
+    # os.path.basename(ref_vector).split('.')[0]
+    inputFileName = res_m + '_' + 'desert'
     fileNameInGrass = 'global_rad'  # 'global_rad_upscaled'
 
     '''validate with 4km satelite data => upscale to 4km then take RMS'''
