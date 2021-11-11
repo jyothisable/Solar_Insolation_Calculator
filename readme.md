@@ -19,7 +19,7 @@ As well, insolation is an important consideration in construction. When construc
 
 ### why calculate insolation when we can measure from satellite data ?
 
-Solar Insolation from satellite data is not at high resolution (about 4km spatial resolution and 30min temporal resolution), but there is a need to have high resolution insolation data for designing small scale solar power systems in building.
+Solar Insolation from satellite data is not at high resolution (about 4km spatial resolution and 30min temporal resolution), but there is a need to have high resolution insolation data for designing small scale solar power systems.
 
 ## Requirements
 
