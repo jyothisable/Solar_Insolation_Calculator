@@ -37,20 +37,24 @@ def findSolarInsolation(day, time):
         min = '00'
     time_UTC = '0'+str(t//100) + min if t//100 < 10 else str(t//100) + min
 
+    if day <= 31:
+        d = str(day) + 'JAN'
+    elif day <= 60:
+        d = str(day - 31) + 'FEB'
+    elif day <= 91:
+        d = str(day - 60) + 'MAR'
     # input cloud data
     gs.run_command('r.in.gdal',
-                   input='data/inputs/clouds/3DIMG_'+day+'JAN2020_' + time_UTC+'_L2B_CMK_CMK.tif',
+                   input='data/inputs/clouds/3DIMG_'+d+'2020_' + time_UTC+'_L2B_CMK_CMK.tif',
                    output='cloud',
                    overwrite=True, flags='o')
     # cleaning cloud data
     gs.run_command('r.mapcalc.simple',
                    a='cloud',
-                   expression='result =(1 - A*(A<=1)*0.5)',
+                   # 0.995 for desert
+                   expression='result =(0.965 - A*(A<=1)*0.5)',
                    output='cloud_cf',
                    overwrite=True)
-
-    # finding solar time (only applicable for this location) => need to change #todo find a module to calc this
-    solar_time = time - 0.7
 
     # calculate solar insolation
     gs.run_command('r.sun',
@@ -63,7 +67,7 @@ def findSolarInsolation(day, time):
                    day=day,
                    time=solar_time,
                    nprocs=6,
-                   linke_value=8,
+                   linke_value=linke,
                    albedo_value=0.3,
                    coeff_bh='cloud_cf',
                    overwrite=True)
@@ -76,8 +80,8 @@ def findSolarInsolation(day, time):
     '''validate with 4km satelite data => upscale to 4km then take RMS'''
     # input validation data
     gs.run_command('r.in.gdal',
-                   input='data/inputs/validation/clip_3DIMG_' +
-                   day+'JAN2020_' + time_UTC + '_L2C_INS_INS.tif',
+                   input='data/inputs/validation/3DIMG_' +
+                   d+'2020_' + time_UTC + '_L2C_INS_INS.tif',
                    output='validation',
                    overwrite=True, flags='o')
     # upscale output radiation to 4km
@@ -201,7 +205,7 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
 
 
 # input DEM file
-file = 'data/inputs/DEMs/desert_dem_32m_deg.tif'
+file = 'data/inputs/DEMs/jamnagar_32m_clipped2.tif'
 # ref_vector = 'data/inputs/vector_mask/full.gpkg'
 gs.run_command('r.in.gdal',
                input=file,
@@ -218,10 +222,9 @@ gs.run_command('r.in.gdal',
 # 0.002159375: '0.25km',
 # 0.0002714 : '0.03km',
 
-res = {0.03455: '4km',
-       0.0086375: '1km',
-       0.002159375: '0.25km'
-       }
+res = {
+    0.002159375: '0.25km'
+}
 
 for res_deg, res_m in res.items():
     gs.run_command('g.region',
@@ -239,7 +242,13 @@ for res_deg, res_m in res.items():
                    slope='slope.dem',
                    overwrite=True)
 
+    # climate data
+    solarTimeCorrection = 1.23
+    deltaSolar = (1.43 - 1.23)/277
+    linke = 7.3
+    deltaLinke = (7.3 - 5)/277
     counter = 0
+
     # specify range of day [1-365 int] and time [24h float]
     for day in range(1, 32):
         if day < 10:
@@ -258,8 +267,15 @@ for res_deg, res_m in res.items():
                 continue
             counter += 1
             # skip extremely cloudy days
-            if counter in range(41, 64) or counter in range(104, 118) or counter in range(132, 143):
-                continue
+            # if counter in range(41, 64) or counter in range(104, 118) or counter in range(132, 143):
+            #     continue
+
+            # finding solar time (only applicable for this location) => need to change #todo find a module to calc this
+            solarTimeCorrection += deltaSolar
+            solar_time = time/2 - solarTimeCorrection  # 1 for desert 1.23 for jamnagar
+
+            # linke value correction
+            linke -= deltaLinke
             findSolarInsolation(day, t)
 
     # take average of comp_timeAvg with counter
