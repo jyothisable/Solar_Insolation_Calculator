@@ -9,6 +9,7 @@ using grass gis
 #Important note
 clear csv files in output data folder manually before running again (otherwise it would append)
 """
+from modules import calcInsolation, datetime, validate
 import os
 from pathlib import Path
 import grass.script as gs
@@ -17,6 +18,52 @@ from datetime import datetime as d
 # os.chdir(os.path.dirname(__file__))  #todo importing not working in linux
 # Temperory fix : given absolute path to the this file below and just copy paste the code to grass gis (importing not working in linux)
 os.chdir('/home/jyothisable/P.A.R.A/1.Projects/mtp/Softwares/VS code/Solar_Insolation_Calculator')
+
+file = 'data/inputs/DEMs/jamnagar_32m_clipped.tif'
+gs.run_command('r.in.gdal',
+               input=file,
+               output='DEM',
+               overwrite=True)
+
+
+# deg: Km
+# 0.03455: '4km',
+# 0.0086375: '1km',
+# 0.002159375: '0.25km',
+# 0.0002714 : '0.03km',
+
+res = {
+    0.0086375: '1km',
+    0.0002714: '0.03km',
+    0.002159375: '0.25km',
+}
+
+for res_deg, res_m in res.items():
+    gs.run_command('g.region',
+                   raster='DEM',
+                   #    vector='ref_vector',
+                   res=res_deg)
+
+    gs.run_command('r.horizon',
+                   elevation='DEM',
+                   step=1,
+                   output='horangle')
+    gs.run_command('r.slope.aspect',
+                   elevation='DEM',
+                   aspect='aspect.dem',
+                   slope='slope.dem',
+                   overwrite=True)
+
+    counter = 1
+    # specify range of day [1-365 int] and time [24h float]
+    for day in range(1, 83):
+        # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
+        for time in range(23, 29):
+            time = time/2
+            formatedDT = datetime.convert(day, time)
+            insolation = calcInsolation(day, time, formatedDT)
+            validate(insolation)
+            counter += 1
 
 
 def findSolarInsolation(day, time):
@@ -84,37 +131,6 @@ def findSolarInsolation(day, time):
                    method='bicubic',
                    overwrite=True)
 
-    # input turbidity
-    # gs.run_command('r.in.gdal',
-    #                input='data/inputs/turbidity/TL2010_' +
-    #                str(month).title() + '_gf.tif',
-    #                output='linkeMap',
-    #                overwrite=True, flags='o')
-
-    # turbidity correction (1.4)
-    # dd = int(day)
-    # if dd < 2:
-    #     k = -2
-    # elif dd < 9:
-    #     k = 2.6
-    # elif dd < 17:
-    #     k = 4
-    # elif dd < 26:
-    #     k = 1.4
-    # elif dd < 45:
-    #     k = 0.7
-    # elif dd < 61:
-    #     k = -0.3
-    # elif dd < 83:
-    #     k = -1
-
-    # cleaning turbidity
-    # gs.run_command('r.mapcalc.simple',
-    #                a='linkeMap',
-    #                expression='result =A + '+str(k),
-    #                output='linkeMap_',
-    #                overwrite=True)
-    # calculate solar insolation
     gs.run_command('r.sun',
                    elevation='DEM',
                    horizon_basename='horangle',
@@ -280,15 +296,11 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
 
 # input DEM file
 file = 'data/inputs/DEMs/jamnagar_32m_clipped.tif'
-# ref_vector = 'data/inputs/vector_mask/full.gpkg'
 gs.run_command('r.in.gdal',
                input=file,
                output='DEM',
                overwrite=True)
-# gs.run_command('v.in.ogr',
-#                input=ref_vector,
-#                output='ref_vector',
-#                overwrite=True)
+
 
 # deg: Km
 # 0.03455: '4km',
