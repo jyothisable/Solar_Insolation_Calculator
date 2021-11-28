@@ -9,7 +9,10 @@ using grass gis
 #Important note
 clear csv files in output data folder manually before running again (otherwise it would append)
 """
-from modules import calcInsolation, datetime, validate
+from modules.calcInsolation import calcInsolation
+from modules import datetime
+from modules.validate import validate
+
 import os
 from pathlib import Path
 import grass.script as gs
@@ -61,8 +64,9 @@ for res_deg, res_m in res.items():
         for time in range(23, 29):
             time = time/2
             formatedDT = datetime.convert(day, time)
-            insolation = calcInsolation(day, time, formatedDT)
-            validate(insolation)
+            insolation = calcInsolation(formatedDT)
+            validate(insolation, formatedDT, counter)
+            
             counter += 1
 
 

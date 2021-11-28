@@ -1,8 +1,7 @@
 
 def convert(date, time):
     '''
-    time from IST to time in UTC
-    nth day of the year to DDMMMYYYY_HHMM
+    nth day of the year and IST time to DDMMMYYYY_HHMM (HHMM in UTC)
     '''
     # convert time format  # todo use datetime module to do this
     t = int(time*100)-550

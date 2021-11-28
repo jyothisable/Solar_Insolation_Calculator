@@ -1,9 +1,8 @@
 
 
-def findSolarInsolation(day, time, formatedDT):
+def calcInsolation(formatedDT):
     '''
-    inputs the day and time to find solar insolation for Digital Elevation model present in inputs/DEMs and output
-    upscaled version of the insolation data to output folder. stats about this is also available in .csv file
+    At a day and time returns the name of raster that curresponds to calculated solar insolation
     '''
     # assigning region => default boundary and location
     gs.run_command('g.region',
