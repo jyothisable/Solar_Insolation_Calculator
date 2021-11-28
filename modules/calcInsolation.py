@@ -2,14 +2,14 @@
 
 def calcInsolation(formatedDT):
     '''
-    At a day and time returns the name of raster that curresponds to calculated solar insolation
+    At a day and time returns the name of raster that curresponds to calculated solar insolation raster 
     '''
     # assigning region => default boundary and location
     gs.run_command('g.region',
-                   #    vector='ref_vector',
                    raster='DEM',
                    res=res_deg)
 
+    # sometimes satlite data is not available at a particular time and day, if it is not available then skip it
     if not os.path.exists('data/inputs/clouds/3DIMG_' + formatedDT + '_L2B_CMK_CMK.tif'):
         return
 
@@ -38,16 +38,18 @@ def calcInsolation(formatedDT):
                    expression='result = 1 + A/0.03',
                    output='turbidity',
                    overwrite=True)
-    # fill no data cells
+    # fill no data cells using bicubic interpolation
     gs.run_command('r.fillnulls',
                    input='turbidity',
                    output='turbidity_filled',
                    method='bicubic',
                    overwrite=True)
 
+    # calculate solar time (this equation is from https://www.esrl.noaa.gov/gmd/grad/solcalc/solareqns.PDF)
     solar_time = time - 1.221986 + 0.008938792*day - \
         0.0001198693 * day**2 + 2.464719e-7*day**3
 
+    # calculate solar insolation
     gs.run_command('r.sun',
                    elevation='DEM',
                    horizon_basename='horangle',
@@ -63,7 +65,4 @@ def calcInsolation(formatedDT):
                    coeff_bh='cloud_cf',
                    overwrite=True)
 
-    return 'global_rad'
-    # os.path.basename(ref_vector).split('.')[0]
-    inputFileName = res_m + '_' + 'desert'
-    fileNameInGrass = 'global_rad'  # 'global_rad_upscaled'
+    return 'global_rad'  # return name of raster that contains solar insolation in grass gis
