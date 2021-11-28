@@ -26,13 +26,13 @@ Solar Insolation from satellite data is not at high resolution (about 4km spatia
 - [Grass GIS ](https://grass.osgeo.org/download/) version 7.8 or higher
 - python 3.6 or higher
 
-## How to use
+## How to use / contribute
 
-1. Download the whole repo or clone it
-2. Place the input DEM (Digital Elevation Model), cloud data and validation data in respective folders in data/inputs folder
-3. Change the date and time range in app.py if required
-4. Open GRASS GIS and import app.py into it and then run it or copy paste the code into grass gis
+1. Download the whole repo / clone / fork
+2. Place the input DEM (Digital Elevation Model), cloud data, validation, turbidity data in respective folders in data/inputs folder
+3. Change the date and time range and resolution in app.py if required.
+4. Open GRASS GIS and create a mapset with [WGS84](https://en.wikipedia.org/wiki/World_Geodetic_System) projection and then import app.py into it and then run it or copy paste the code into grass gis
 5. Result will be available in data/output
-6. A CSV file is also created saving the stats of each simulation
+6. CSV files are also created saving the stats of each simulation
 
-To know more about input data see the README.md files in respective folders in data/inputs folder.
+To know more about input data, see the README.md files in respective folders in data/inputs folder.
