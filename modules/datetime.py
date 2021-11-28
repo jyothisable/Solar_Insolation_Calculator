@@ -3,7 +3,7 @@ def convert(date, time):
     '''
     nth day of the year and IST time to DDMMMYYYY_HHMM (HHMM in UTC)
     '''
-    # convert time format  # todo use datetime module to do this
+    # convert time format  # todo use datetime inbuilt module to do this
     t = int(time*100)-550
     min = str(int(((t % 100)/100)*60))
     if min == '0':
