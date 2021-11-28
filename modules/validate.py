@@ -29,26 +29,28 @@ def validate(raster, formatedDT, counter):
                    output='comp',
                    overwrite=True)
     if counter > 1:
-        # add comp_timeAvg raster to current raster
+        # add sum raster to current raster
         gs.run_command('r.mapcalc.simple',
                        a='comp',
-                       b='comp_timeAvg',
+                       b='sum',
                        expression='result = A + B',
-                       output='comp_timeAvg',
+                       output='sum',
                        overwrite=True)
-    # copy previous raster to comp_timeAvg
+    # copy previous raster to sum
     elif counter == 1:
         gs.run_command('g.copy',
-                       raster='comp,comp_timeAvg',
+                       raster='comp,sum',
                        overwrite=True)
 
     # output comparison raster
     outputCSV_Loc = 'data/outputs/' + res_m + '_validation' + \
         '/' + res_m + '_validation' + '_stats.csv'
-    outputRaster = 'comp'
-    outputStats(outputCSV_Loc, outputRaster)
+
+    outputStats(outputCSV_Loc, 'comp')
 
     outputFile_Loc = 'data/outputs/' + res_m + '_validation/' + \
         res_m + '_validation' + '_D'+str(day)+'_H'+str(time)+'.tif'
 
-    outputFile(outputFile_Loc, outputRaster)
+    outputFile(outputFile_Loc, 'comp')
+
+    return 'sum'
