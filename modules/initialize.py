@@ -1,5 +1,8 @@
 
 def initialize(raster):
+    '''
+    Input DEM and find horizon, slope and aspect (only need once per location and resolution)
+    '''
     gs.run_command('r.in.gdal',
                    input=raster,
                    output='DEM',

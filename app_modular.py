@@ -4,10 +4,8 @@
 # Created Date: 18-08-2021 00:17:21
 # =============================================================================
 """
-The module has been build for calculating the solar insolation of a region using DEM (digital elevation model)
-using grass gis
-#Important note
-clear csv files in output data folder manually before running again (otherwise it would append)
+The module has been build for calculating and validating the solar insolation of a region using GRASS GIS python API.
+Note: To avoid unwanted data loss new statistcis results always append to previous one in CSV files, before running again manually delete or move it.
 """
 # user defined modules
 from modules.initialize import initialize
@@ -23,28 +21,27 @@ import os
 import grass.script as gs
 
 # change directory because this file is usually imported to grass gis
-# os.chdir(os.path.dirname(__file__))  #todo importing not working in linux
-# Temperory fix : given absolute path to the this file below and just copy paste the code to grass gis (importing not working in linux)
-os.chdir('/home/jyothisable/P.A.R.A/1.Projects/mtp/Softwares/VS code/Solar_Insolation_Calculator')
+os.chdir(os.path.dirname(__file__))  # todo importing not working in linux
 
-# Approximate convertion (this depends upon location)
+# Approximate degree to Km convertion reference to use in 'res' dictionary (this depends upon location)
 # deg: Km
 # 0.03455: '4km',
 # 0.0086375: '1km',
 # 0.002159375: '0.25km',
 # 0.0002714 : '0.03km',
 
+# specify need resolution as {deg: km} key value pair
 res = {
     0.0086375: '1km',
     0.0002714: '0.03km',
     0.002159375: '0.25km',
 }
 
+# file location of input DEM
 DEMfile = 'data/inputs/DEMs/jamnagar_32m_clipped.tif'
 
 for res_deg, res_m in res.items():
     initialize(DEMfile)
-
     counter = 1
     # specify range of day [1-365 int] and time [24h float]
     for day in range(1, 83):

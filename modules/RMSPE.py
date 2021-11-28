@@ -4,15 +4,16 @@ from modules.outputFile import outputFile
 
 def RMSPE(sumRaster, counter):
     '''
-    find root mean percentage square error using comparison error raster map cleated during validatiion
+    find root mean square percentage error (RMSPE) using comparison error raster (comp) map cleated during validation
     '''
-    # take average of comp_timeAvg with counter
+    # take Square root of average of sumRaster with counter
     gs.run_command('r.mapcalc.simple',
                    a=sumRaster,
                    expression='result = sqrt(A/' + str(counter) + ')',
                    output='rootMeanPE',
                    overwrite=True)
 
+    # output stats and raster
     outputCSV_loc = 'data/outputs/' + res_m + \
         '_validation/' + res_m + '_timeAvg_stats.csv'
     outputFile_loc = 'data/outputs/' + res_m + \
