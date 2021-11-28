@@ -9,7 +9,7 @@ using grass gis
 #Important note
 clear csv files in output data folder manually before running again (otherwise it would append)
 """
-
+# user defined modules
 from modules.initialize import initialize
 from modules.calcInsolation import calcInsolation
 from modules import datetime
@@ -18,6 +18,7 @@ from modules.outputFile import outputFile
 from modules.outputStats import outputStats
 from modules.RMSPE import RMSPE
 
+# inbuilt modules
 import os
 import grass.script as gs
 
