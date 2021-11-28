@@ -5,7 +5,7 @@ def outputFile(outputFile, outputRaster):
     Output raster file as .tif and .png
     '''
     # see if parent folder of outputFile exists
-    outputFile_FolderLoc = os.path.dirname(outputCSV_Loc)
+    outputFile_FolderLoc = os.path.dirname(outputFile)
     if not os.path.exists(outputFile_FolderLoc):
         os.makedirs(outputFile_FolderLoc)
     
