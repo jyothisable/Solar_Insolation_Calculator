@@ -3,7 +3,11 @@ import os
 
 
 def outputStats(outputCSV_Loc, outputRaster):
-    # output comparison raster
+    '''
+    Output statistics of raster file
+    '''
+    
+    # find stats of raster
     gs.run_command('r.univar',
                    map=outputRaster,
                    output='data/.cache/stats_cache.csv',
@@ -11,10 +15,12 @@ def outputStats(outputCSV_Loc, outputRaster):
                    overwrite=True,
                    flags='te')
 
+    # find parent folder of outputCSV_Loc and see if it exists
     outputCSV_FolderLoc = os.path.dirname(outputCSV_Loc)
     if not os.path.exists(outputCSV_FolderLoc):
         os.makedirs(outputCSV_FolderLoc)
 
+    # from cache file, output to csv
     with open('data/.cache/stats_cache.csv', newline='') as cache_csv:
         lastLine = cache_csv.read().splitlines()[-1]
     with open(outputCSV_Loc, 'a') as output_csv:

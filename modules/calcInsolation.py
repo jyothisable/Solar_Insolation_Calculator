@@ -2,7 +2,7 @@
 
 def calcInsolation(formatedDT):
     '''
-    At a day and time returns the name of raster that curresponds to calculated solar insolation raster 
+    For a day and time returns calculated solar insolation raster as string name in GRASS GIS
     '''
     # assigning region => default boundary and location
     gs.run_command('g.region',

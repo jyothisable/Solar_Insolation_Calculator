@@ -5,7 +5,11 @@ from modules.outputFile import outputFile
 
 
 def validate(raster, formatedDT, counter):
-    '''validate with 4km satelite data => upscale to 4km then take RMS'''
+    '''
+    * Make an square percentage error raster
+    * Output error raster and stats
+    * find sumRaster to find RMSPE later in RMSPE module
+    '''
     # input validation data
     gs.run_command('r.in.gdal',
                    input='data/inputs/validation/3DIMG_'+formatedDT+'_L2C_INS_INS.tif',

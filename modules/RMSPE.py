@@ -4,7 +4,7 @@ from modules.outputFile import outputFile
 
 def RMSPE(sumRaster, counter):
     '''
-    find root mean square percentage error (RMSPE) using comparison error raster (comp) map cleated during validation
+    find root mean square percentage error (RMSPE) using sumRaster raster cleated during validation
     '''
     # take Square root of average of sumRaster with counter
     gs.run_command('r.mapcalc.simple',
