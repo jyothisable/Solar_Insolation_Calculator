@@ -9,6 +9,8 @@ using grass gis
 #Important note
 clear csv files in output data folder manually before running again (otherwise it would append)
 """
+
+from modules.initialize import initialize
 from modules.calcInsolation import calcInsolation
 from modules import datetime
 from modules.validate import validate
@@ -17,7 +19,6 @@ from modules.outputStats import outputStats
 from modules.RMSPE import RMSPE
 
 import os
-
 import grass.script as gs
 
 # change directory because this file is usually imported to grass gis
@@ -25,13 +26,7 @@ import grass.script as gs
 # Temperory fix : given absolute path to the this file below and just copy paste the code to grass gis (importing not working in linux)
 os.chdir('/home/jyothisable/P.A.R.A/1.Projects/mtp/Softwares/VS code/Solar_Insolation_Calculator')
 
-file = 'data/inputs/DEMs/jamnagar_32m_clipped.tif'
-gs.run_command('r.in.gdal',
-               input=file,
-               output='DEM',
-               overwrite=True)
-
-
+# Approximate convertion (this depends upon location)
 # deg: Km
 # 0.03455: '4km',
 # 0.0086375: '1km',
@@ -44,26 +39,15 @@ res = {
     0.002159375: '0.25km',
 }
 
-for res_deg, res_m in res.items():
-    gs.run_command('g.region',
-                   raster='DEM',
-                   #    vector='ref_vector',
-                   res=res_deg)
+DEMfile = 'data/inputs/DEMs/jamnagar_32m_clipped.tif'
 
-    gs.run_command('r.horizon',
-                   elevation='DEM',
-                   step=1,
-                   output='horangle')
-    gs.run_command('r.slope.aspect',
-                   elevation='DEM',
-                   aspect='aspect.dem',
-                   slope='slope.dem',
-                   overwrite=True)
+for res_deg, res_m in res.items():
+    initialize(DEMfile)
 
     counter = 1
     # specify range of day [1-365 int] and time [24h float]
     for day in range(1, 83):
-        # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
+        # 11:30am to 3:30pm IST (6 to 10 UTC) => about 11 to 3pm solar time
         for time in range(23, 29):
             time = time/2
             formatedDT = datetime.convert(day, time)
