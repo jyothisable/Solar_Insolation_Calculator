@@ -6,7 +6,7 @@
 """
 The module has been build for calculating the solar insolation of a region using DEM (digital elevation model)
 using grass gis
-#Important note
+# Important note
 clear csv files in output data folder manually before running again (otherwise it would append)
 """
 import os
@@ -24,11 +24,6 @@ def findSolarInsolation(day, time):
     inputs the day and time to find solar insolation for Digital Elevation model present in inputs/DEMs and output
     upscaled version of the insolation data to output folder. stats about this is also available in .csv file
     '''
-    # assigning region => default boundary and location
-    gs.run_command('g.region',
-                   #    vector='ref_vector',
-                   raster='DEM',
-                   res=res_deg)
 
     # convert time format  # todo use datetime module to do this
     t = int(time*100)-550
@@ -52,6 +47,39 @@ def findSolarInsolation(day, time):
                           '2020_' + time_UTC+'_L2B_CMK_CMK.tif'):
         return
 
+    # assigning region => default boundary and location
+    gs.run_command('g.region',
+                   raster='DEM',
+                   res=res_deg)
+
+    # input aerosol optical depth from turbidity folder
+    gs.run_command('r.in.gdal',
+                   input='data/inputs/turbidity/3DIMG_'+d+'2020_' + time_UTC+'_L2G_AOD_AOD.tif',
+                   output='aerosol',
+                   overwrite=True, flags='o')
+    if day in range(1, 17):
+        cl = 2
+    else:
+        cl = 0
+    # calculating turbidity
+    gs.run_command('r.mapcalc.simple',
+                   a='aerosol',
+                   expression='result = 4.5 + A/0.5 +'+str(cl),
+                   output='turbidity',
+                   overwrite=True)
+    # fill no data cells
+    gs.run_command('r.fillnulls',
+                   input='turbidity',
+                   output='turbidity_filled',
+                   method='bilinear',
+                   overwrite=True)
+
+    # assigning region => default boundary and location
+    gs.run_command('g.region',
+                   raster='DEM',
+                   vector='ref_vector',
+                   res=res_deg)
+
     # input cloud data
     gs.run_command('r.in.gdal',
                    input='data/inputs/clouds/3DIMG_'+d+'2020_' + time_UTC+'_L2B_CMK_CMK.tif',
@@ -61,60 +89,10 @@ def findSolarInsolation(day, time):
     gs.run_command('r.mapcalc.simple',
                    a='cloud',
                    # 0.995 for desert
-                   expression='result =(0.965 - A*(A<=1)*0.5)',
+                   expression='result =(1 - A*(A<=1)*0.5)',
                    output='cloud_cf',
                    overwrite=True)
 
-    # input aerosol optical depth from turbidity folder
-    gs.run_command('r.in.gdal',
-                   input='data/inputs/turbidity/3DIMG_'+d+'2020_' + time_UTC+'_L2G_AOD_AOD.tif',
-                   output='aerosol',
-                   overwrite=True, flags='o')
-
-    # calculating turbidity
-    gs.run_command('r.mapcalc.simple',
-                   a='aerosol',
-                   expression='result = 1 + A/0.03',
-                   output='turbidity',
-                   overwrite=True)
-    # fill no data cells
-    gs.run_command('r.fillnulls',
-                   input='turbidity',
-                   output='turbidity_filled',
-                   method='bicubic',
-                   overwrite=True)
-
-    # input turbidity
-    # gs.run_command('r.in.gdal',
-    #                input='data/inputs/turbidity/TL2010_' +
-    #                str(month).title() + '_gf.tif',
-    #                output='linkeMap',
-    #                overwrite=True, flags='o')
-
-    # turbidity correction (1.4)
-    # dd = int(day)
-    # if dd < 2:
-    #     k = -2
-    # elif dd < 9:
-    #     k = 2.6
-    # elif dd < 17:
-    #     k = 4
-    # elif dd < 26:
-    #     k = 1.4
-    # elif dd < 45:
-    #     k = 0.7
-    # elif dd < 61:
-    #     k = -0.3
-    # elif dd < 83:
-    #     k = -1
-
-    # cleaning turbidity
-    # gs.run_command('r.mapcalc.simple',
-    #                a='linkeMap',
-    #                expression='result =A + '+str(k),
-    #                output='linkeMap_',
-    #                overwrite=True)
-    # calculate solar insolation
     gs.run_command('r.sun',
                    elevation='DEM',
                    horizon_basename='horangle',
@@ -182,8 +160,8 @@ def findSolarInsolation(day, time):
         os.makedirs('data/outputs/' + res_m + '_validation' + '/')
     with open('data/.cache/stats_cache.csv', newline='') as cache_csv:
         lastLine = cache_csv.read().splitlines()[-1]
-    with open('data/outputs/' + res_m + '_validation' + '/' + res_m + '_validation' + '_stats.csv', 'a') as output_csv:
-        if os.stat('data/outputs/' + res_m + '_validation' + '/' + res_m + '_validation' + '_stats.csv').st_size == 0:
+    with open('data/outputs/' + res_m + '_validation' + '/' + str(fid)+'_' + res_m + '_validation' + '_stats.csv', 'a') as output_csv:
+        if os.stat('data/outputs/' + res_m + '_validation' + '/' + str(fid)+'_' + res_m + '_validation' + '_stats.csv').st_size == 0:
             output_csv.writelines(
                 "day,time(IST),non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
         output_csv.write("\n")
@@ -194,18 +172,18 @@ def findSolarInsolation(day, time):
                    output='data/outputs/' + res_m + '_validation' + '/' + res_m + '_validation' +
                    '_D'+str(day)+'_H'+str(time)+'.tif',
                    overwrite=True)
-    gs.run_command('r.out.png',
-                   input='comp',
-                   output='data/outputs/' + res_m + '_validation' + '/' + res_m + '_validation' +
-                   '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
-                   overwrite=True)
+    # gs.run_command('r.out.png',
+    #                input='comp',
+    #                output='data/outputs/' + str(fid)+'_' + res_m + '_validation' + '/' + res_m + '_validation' +
+    #                '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
+    #                overwrite=True)
     saveOutput(inputFileName, fileNameInGrass, day, time)
 
 
 def saveOutput(inputFileName, fileNameInGrass, day, time):
     '''
     input input file name and output file name
-    save current output file as .tif in output folder and also append statistics of this file to a .csv file 
+    save current output file as .tif in output folder and also append statistics of this file to a .csv file
     '''
     # output results stats into CSV (can't append directly)
     gs.run_command('r.univar',
@@ -218,14 +196,14 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
         os.makedirs('data/outputs/' + res_m + '/')
     with open('data/.cache/stats_cache.csv', newline='') as cache_csv:
         lastLine = cache_csv.read().splitlines()[-1]
-    with open('data/outputs/' + res_m + '/' + inputFileName + '_stats.csv', 'a') as output_csv:
-        if os.stat('data/outputs/' + res_m + '/' + inputFileName + '_stats.csv').st_size == 0:
+    with open('data/outputs/' + res_m + '/' + str(fid)+'_' + inputFileName + '_stats.csv', 'a') as output_csv:
+        if os.stat('data/outputs/' + res_m + '/' + str(fid)+'_' + inputFileName + '_stats.csv').st_size == 0:
             output_csv.writelines(
                 "day,time(IST),non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
         output_csv.write("\n")
         output_csv.writelines(str(day)+','+str(time)+','+lastLine)
 
-    # output validation stats into CSV (can't append directly)
+    # output validation stats into CSV 
     # gs.run_command('r.univar',
     #                map='validation',
     #                output='data/.cache/stats_cache.csv',
@@ -241,17 +219,51 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
     #             "day,time(IST),non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
     #     output_csv.write("\n")
     #     output_csv.writelines(str(day)+','+str(time)+','+lastLine)
+    # output cloud data
+    gs.run_command('r.univar',
+                   map='cloud_cf',
+                   output='data/.cache/stats_cache.csv',
+                   separator='comma',
+                   overwrite=True,
+                   flags='te')
 
+    with open('data/.cache/stats_cache.csv', newline='') as cache_csv:
+        lastLine = cache_csv.read().splitlines()[-1]
+    with open('data/outputs/' + res_m + '/' + str(fid)+'_cloud.csv', 'a') as output_csv:
+        if os.stat('data/outputs/' + res_m + '/' + str(fid) + '_cloud.csv').st_size == 0:
+            output_csv.writelines(
+                "day,time(IST),non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
+        output_csv.write("\n")
+        output_csv.writelines(str(day)+','+str(time)+','+lastLine)
+
+    # output turbidity data
+    gs.run_command('r.univar',
+                   map='turbidity_filled',
+                   output='data/.cache/stats_cache.csv',
+                   separator='comma',
+                   overwrite=True,
+                   flags='te')
+
+    with open('data/.cache/stats_cache.csv', newline='') as cache_csv:
+        lastLine = cache_csv.read().splitlines()[-1]
+    with open('data/outputs/' + res_m + '/' + str(fid) + '_turbidity.csv', 'a') as output_csv:
+        if os.stat('data/outputs/' + res_m + '/' + str(fid) + '_turbidity.csv').st_size == 0:
+            output_csv.writelines(
+                "day,time(IST),non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
+        output_csv.write("\n")
+        output_csv.writelines(str(day)+','+str(time)+','+lastLine)
+
+    # output Tiff
     gs.run_command('r.out.gdal',
                    input=fileNameInGrass,
                    output='data/outputs/' + res_m + '/'+inputFileName +
                    '_D'+str(day)+'_H'+str(time)+'.tif',
                    overwrite=True)
-    gs.run_command('r.out.png',
-                   input=fileNameInGrass,
-                   output='data/outputs/' + res_m + '/'+inputFileName +
-                   '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
-                   overwrite=True)
+    # gs.run_command('r.out.png',
+    #                input=fileNameInGrass,
+    #                output='data/outputs/' + res_m + '/'+inputFileName +
+    #                '_D'+str(day)+'_H'+str(time)+'.png', compression=0,
+    #                overwrite=True)
 
     # bicubic interpolation
     # gs.run_command('g.region', raster='global_rad', res=res_deg/4)
@@ -278,89 +290,90 @@ def saveOutput(inputFileName, fileNameInGrass, day, time):
     #                overwrite=True)
 
 
-# input DEM file
-file = 'data/inputs/DEMs/jamnagar_32m_clipped.tif'
-# ref_vector = 'data/inputs/vector_mask/full.gpkg'
-gs.run_command('r.in.gdal',
-               input=file,
-               output='DEM',
-               overwrite=True)
-# gs.run_command('v.in.ogr',
-#                input=ref_vector,
-#                output='ref_vector',
-#                overwrite=True)
+# cells
+fids = [5, 35, 55, 75, 95, 125, 145, 165, 185, 205, 225, 245, 265]
+for fid in fids:
 
-# deg: Km
-# 0.03455: '4km',
-# 0.0086375: '1km',
-# 0.002159375: '0.25km',
-# 0.0002714 : '0.03km',
-
-res = {
-    0.0086375: '1km',
-    0.0002714: '0.03km',
-    0.002159375: '0.25km',
-}
-
-for res_deg, res_m in res.items():
-    gs.run_command('g.region',
-                   raster='DEM',
-                   #    vector='ref_vector',
-                   res=res_deg)
-
-    gs.run_command('r.horizon',
-                   elevation='DEM',
-                   step=1,
-                   output='horangle')
-    gs.run_command('r.slope.aspect',
-                   elevation='DEM',
-                   aspect='aspect.dem',
-                   slope='slope.dem',
+    # input DEM file
+    file = 'data/inputs/DEMs/jamnagar_32m_clipped.tif'
+    ref_vector = '/home/jyothisable/P.A.R.A/1.Projects/mtp/Dataset/jamnagar/vector_mask/fid_' + \
+        str(fid)+'.gpkg'
+    gs.run_command('r.in.gdal',
+                   input=file,
+                   output='DEM',
+                   overwrite=True)
+    gs.run_command('v.in.ogr',
+                   input=ref_vector,
+                   output='ref_vector',
                    overwrite=True)
 
-    counter = 0
-    # specify range of day [1-365 int] and time [24h float]
-    for day in range(1, 83):
-        # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
-        for time in range(23, 29):
-            t = time/2
-            counter += 1
+    # deg: Km
+    # 0.03455: '4km',
+    # 0.0086375: '1km',
+    # 0.002159375: '0.25km',
+    # 0.0002714 : '0.03km',
 
-            solar_time = t - 1.221986 + 0.008938792*day - \
-                0.0001198693 * day**2 + 2.464719e-7*day**3
+    res = {
+        0.002159375: '0.25km',
+    }
 
-            findSolarInsolation(day, t)
+    for res_deg, res_m in res.items():
+        gs.run_command('g.region',
+                       raster='DEM',
+                       vector='ref_vector',
+                       res=res_deg)
+        gs.run_command('r.horizon',
+                       elevation='DEM',
+                       step=1,
+                       output='horangle')
+        gs.run_command('r.slope.aspect',
+                       elevation='DEM',
+                       aspect='aspect.dem',
+                       slope='slope.dem',
+                       overwrite=True)
+        counter = 0
+        # specify range of day [1-365 int] and time [24h float]
+        for day in range(1, 91):
+            # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
+            for time in range(23, 29):
+                t = time/2
+                counter += 1
+                solar_time = t - 0.7 - 0.8792817 + 0.008936339 * \
+                    day - 0.0001116592*day**2 + 1.586592e-7*day**3
+                if (day == 69 and t == 12.5) or (day == 70 and t == 12.5):
+                    continue
+                findSolarInsolation(day, t)
 
-    # take average of comp_timeAvg with counter
-    gs.run_command('r.mapcalc.simple',
-                   a='comp_timeAvg',
-                   expression='result = sqrt(A/' + str(counter) + ')',
-                   output='comp_timeAvg',
-                   overwrite=True)
-    gs.run_command('r.univar',
-                   map='comp_timeAvg',
-                   output='data/.cache/stats_cache.csv',
-                   separator='comma',
-                   flags='te',
-                   overwrite=True)
-    with open('data/.cache/stats_cache.csv', newline='') as cache_csv:
-        lastLine = cache_csv.read().splitlines()[-1]
-    with open('data/outputs/' + res_m + '_validation' +
-              '/' + res_m + '_timeAvg_stats.csv', 'a') as output_csv:
-        if os.stat('data/outputs/' + res_m + '_validation' +
-                   '/' + res_m + '_timeAvg_stats.csv').st_size == 0:
-            output_csv.writelines(
-                "non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
-        output_csv.write("\n")
-        output_csv.writelines(lastLine)
+        # take average of comp_timeAvg with counter
+        gs.run_command('r.mapcalc.simple',
+                       a='comp_timeAvg',
+                       expression='result = sqrt(A/' + str(counter) + ')',
+                       output='comp_timeAvg',
+                       overwrite=True)
+        gs.run_command('r.univar',
+                       map='comp_timeAvg',
+                       output='data/.cache/stats_cache.csv',
+                       separator='comma',
+                       flags='te',
+                       overwrite=True)
+        with open('data/.cache/stats_cache.csv', newline='') as cache_csv:
+            lastLine = cache_csv.read().splitlines()[-1]
+        with open('data/outputs/' + res_m + '_validation' +
+                  '/' + str(fid)+'_' + res_m + '_timeAvg_stats.csv', 'a') as output_csv:
+            if os.stat('data/outputs/' + res_m + '_validation' +
+                       '/' + str(fid)+'_' + res_m + '_timeAvg_stats.csv').st_size == 0:
+                output_csv.writelines(
+                    "non_null_cells,null_cells,min,max,range,mean,mean_of_abs,stddev,variance,coeff_var,sum,sum_abs,first_quart,median,third_quart,perc_90")
+            output_csv.write("\n")
+            output_csv.writelines(lastLine)
 
-    # export comp_timeAvg as tif
-    gs.run_command('r.out.gdal',
-                   input='comp_timeAvg',
-                   output='data/outputs/' + res_m + '_validation' +
-                   '/' + res_m + '_timeAvg_validation.tif',
-                   overwrite=True)
-    # remove comp_timeAvg raster
-    gs.run_command('g.remove',
-                   type='raster',
-                   name='comp_timeAvg')
+        # export comp_timeAvg as tif
+        gs.run_command('r.out.gdal',
+                       input='comp_timeAvg',
+                       output='data/outputs/' + res_m + '_validation' +
+                       '/' + res_m + '_timeAvg_validation.tif',
+                       overwrite=True)
+        # remove comp_timeAvg raster
+        gs.run_command('g.remove',
+                       type='raster',
+                       name='comp_timeAvg')

@@ -2,6 +2,7 @@ data/inputs/DEMs/*.tif
 data/inputs/clouds/*.tif
 data/inputs/clouds/*.tif.aux.xml
 data/inputs/turbidity/*.tif
+data/inputs/turbidity_d/*
 data/inputs/turbidity/*.tif.aux.xml
 data/inputs/validation/*.tif
 data/inputs/validation/*.tif.aux.xml

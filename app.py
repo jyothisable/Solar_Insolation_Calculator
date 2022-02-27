@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/home/jyothisable/anaconda3/bin python
+print("Hello World")
 # # =============================================================================
 # Created By  : Athul Jyothis
 # Created Date: 18-08-2021 00:17:21
@@ -22,6 +23,7 @@ import grass.script as gs
 
 # change directory because this file is usually imported to grass gis
 os.chdir(os.path.dirname(__file__))  # todo importing not working in linux
+os.chdir('/home/jyothisable/P.A.R.A/1.Projects/mtp/Softwares/VS code/Solar_Insolation_Calculator')
 
 # Approximate degree to Km convertion reference to use in 'res' dictionary (this depends upon location)
 # deg: Km
