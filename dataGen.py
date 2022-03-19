@@ -60,14 +60,11 @@ def findSolarInsolation(day, time):
                    input='data/inputs/turbidity/3DIMG_'+d+'2020_' + time_UTC+'_L2G_AOD_AOD.tif',
                    output='aerosol',
                    overwrite=True, flags='o')
-    if day in range(1,17):
-        cl = 2
-    else:
-        cl = 0
+
     # calculating turbidity
     gs.run_command('r.mapcalc.simple',
                    a='aerosol',
-                   expression='result = 4.5 + A/0.5 +'+str(cl),
+                   expression='result = 4.5 + A/0.5',
                    output='turbidity',
                    overwrite=True)
     # fill no data cells
