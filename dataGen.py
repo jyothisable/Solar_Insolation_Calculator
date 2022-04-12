@@ -140,12 +140,9 @@ for res_deg, res_m in res.items():
     for day in range(69, 91):
         # 11:30am to 3:30pm IST (6 to 10 UTC)=> about 11 to 3pm solar time
         for time in range(23, 29):
-            #if day in {3, 7, 13, 19, 25, 27, 34, 44, 46, 49, 50, 52, 54, 55, 56, 59, 65, 70, 71, 73, 75, 76, 79}: continue
             t = time/2
             counter += 1
             solar_time = t - 0.7 - 0.8792817 + 0.008936339 * \
                 day - 0.0001116592*day**2 + 1.586592e-7*day**3
-            # solar_time = t  (1.221986 + 0.008938792*day - \
-                #   0.0001198693 * day**2 + 2.464719e-7*day**3)/2
             if (day == 69 and t == 12.5) or (day == 70 and t == 12.5): continue
             findSolarInsolation(day, t)
