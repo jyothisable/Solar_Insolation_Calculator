@@ -1,3 +1,5 @@
+Note: This was an attempt to modularize the code, but the current working version uses a single file .py in the root folder, namely dataGen.py and validation.py for data generation and validation, respectively.
+
 # Modules
 
 - initialize => Input DEM and find horizon, slope and aspect
